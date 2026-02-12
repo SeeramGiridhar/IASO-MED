@@ -76,8 +76,8 @@ export default function ChatBot() {
         setIsLoading(true);
 
         try {
-            // Check for OpenAI API Key
-            const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+            // Check for OpenAI        try {
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
             if (!apiKey) {
                 // Mock response if no API key is provided
@@ -93,44 +93,53 @@ export default function ChatBot() {
                 return;
             }
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            // Build conversation history for Gemini
+            const conversationHistory = messages
+                .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.content}`)
+                .join('\n');
+
+            const fullPrompt = `You are IASO AI, a helpful and professional medical assistant for the IASO Med platform. You help patients understand their medical reports and symptoms. Always include a disclaimer that you are an AI and not a replacement for professional medical advice.
+
+${conversationHistory}
+User: ${userMessage.content}
+Model:`;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'You are IASO AI, a helpful and professional medical assistant for the IASO Med platform. You help patients understand their medical reports and symptoms. Always include a disclaimer that you are an AI and not a replacement for professional medical advice.'
-                        },
-                        ...messages.map(m => ({ role: m.role, content: m.content })),
-                        { role: 'user', content: userMessage.content }
-                    ]
+                    contents: [{
+                        parts: [{
+                            text: fullPrompt
+                        }]
+                    }]
                 })
             });
 
             const data = await response.json();
-            if (data.choices?.[0]?.message) {
+
+            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
                 const assistantMessage: Message = {
                     role: 'assistant',
-                    content: data.choices[0].message.content,
+                    content: data.candidates[0].content.parts[0].text,
                     timestamp: new Date()
                 };
                 setMessages(prev => [...prev, assistantMessage]);
+            } else if (data.error) {
+                throw new Error(data.error.message || 'Gemini API error');
             } else {
                 throw new Error('Invalid response from AI');
             }
         } catch (error: any) {
             console.error('Chat error:', error);
 
-            // Check if it's a quota error
+            // Provide helpful error message
             let errorContent = "I'm sorry, I encountered an error. Please try again later.";
 
-            if (error?.message?.includes('quota') || error?.message?.includes('insufficient')) {
-                errorContent = "⚠️ OpenAI API credits have been exceeded. To enable full AI responses, please add credits at platform.openai.com/account/billing. In the meantime, I can still provide helpful guidance in demo mode! Ask me about blood tests, reports, or finding doctors.";
+            if (error?.message?.includes('API key')) {
+                errorContent = "⚠️ API key issue detected. Please check your Gemini API configuration.";
             }
 
             const errorMessage: Message = {

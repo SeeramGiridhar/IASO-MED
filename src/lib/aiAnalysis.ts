@@ -1,6 +1,6 @@
 /**
  * IASO Med - AI Medical Report Analysis Service
- * Uses OpenAI GPT-4o to analyze medical report images and extract insights
+ * Uses Google Gemini Pro Vision to analyze medical report images and extract insights
  */
 
 interface AnalysisResult {
@@ -11,64 +11,59 @@ interface AnalysisResult {
 }
 
 /**
- * Analyzes a medical report image using OpenAI GPT-4o Vision
+ * Analyzes a medical report image using Google Gemini Pro Vision
  */
 export async function analyzeMedicalReport(file: File): Promise<AnalysisResult> {
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
-        throw new Error('OpenAI API key not configured');
+        throw new Error('Gemini API key not configured');
     }
 
     try {
-        // Convert file to base64
+        // Convert file to base64 (remove data URL prefix for Gemini)
         const base64Image = await fileToBase64(file);
+        const base64Data = base64Image.split(',')[1]; // Remove "data:image/...;base64," prefix
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const mimeType = file.type || 'image/jpeg';
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'gpt-4o',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are a medical AI assistant specialized in analyzing medical reports. Your role is to:
+                contents: [{
+                    parts: [
+                        {
+                            text: `You are a medical AI assistant specialized in analyzing medical reports. Your role is to:
 1. Extract and interpret key medical data from report images
 2. Identify abnormal values and flag them
 3. Provide clear, patient-friendly explanations
 4. Classify severity: normal, warning, or critical
 5. Suggest next steps (always recommend consulting a doctor)
 
-Return your analysis in JSON format with this structure:
+Analyze this medical report image and provide your response in VALID JSON format with this exact structure:
 {
   "summary": "Brief 2-3 sentence overview of the report",
   "keyFindings": ["Finding 1", "Finding 2", "Finding 3"],
   "recommendations": ["Recommendation 1", "Recommendation 2"],
-  "severity": "normal" | "warning" | "critical"
+  "severity": "normal"
 }
 
-IMPORTANT: Always include a disclaimer that this is AI analysis and professional medical consultation is required.`
-                    },
-                    {
-                        role: 'user',
-                        content: [
-                            {
-                                type: 'text',
-                                text: 'Please analyze this medical report image and provide insights in the requested JSON format.'
-                            },
-                            {
-                                type: 'image_url',
-                                image_url: {
-                                    url: base64Image
-                                }
+IMPORTANT: 
+- Return ONLY valid JSON, no markdown formatting
+- Always include a disclaimer that this is AI analysis and professional medical consultation is required
+- severity must be exactly one of: "normal", "warning", or "critical"`
+                        },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Data
                             }
-                        ]
-                    }
-                ],
-                max_tokens: 1000
+                        }
+                    ]
+                }]
             })
         });
 
@@ -78,11 +73,23 @@ IMPORTANT: Always include a disclaimer that this is AI analysis and professional
         }
 
         const data = await response.json();
-        const content = data.choices[0].message.content;
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-        // Extract JSON from the response (handle markdown code blocks)
-        const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
+        if (!content) {
+            throw new Error('No content received from Gemini API');
+        }
+
+        // Extract JSON from the response (handle markdown code blocks and backticks)
+        let jsonString = content.trim();
+
+        // Remove markdown code blocks if present
+        const jsonMatch = jsonString.match(/```json\n?([\s\S]*?)\n?```/) || jsonString.match(/```\n?([\s\S]*?)\n?```/);
+        if (jsonMatch) {
+            jsonString = jsonMatch[1];
+        }
+
+        // Remove any leading/trailing whitespace
+        jsonString = jsonString.trim();
 
         const analysis: AnalysisResult = JSON.parse(jsonString);
 
@@ -112,37 +119,33 @@ export async function generateReportSummary(
     reportType: string,
     extractedText: string
 ): Promise<string> {
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
         return 'AI analysis is currently unavailable. Please configure your API key.';
     }
 
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'gpt-4o',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a medical AI that creates brief, patient-friendly summaries of medical reports. Keep it concise (2-3 sentences) and always remind users to consult their doctor.'
-                    },
-                    {
-                        role: 'user',
-                        content: `Summarize this ${reportType} report in patient-friendly language:\n\n${extractedText}`
-                    }
-                ],
-                max_tokens: 200
+                contents: [{
+                    parts: [{
+                        text: `You are a medical AI that creates brief, patient-friendly summaries of medical reports. Keep it concise (2-3 sentences) and always remind users to consult their doctor.
+
+Summarize this ${reportType} report in patient-friendly language:
+
+${extractedText}`
+                    }]
+                }]
             })
         });
 
         const data = await response.json();
-        return data.choices[0].message.content;
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate summary.';
     } catch (error) {
         console.error('Summary generation error:', error);
         return 'Unable to generate summary. Please review the full report details.';
