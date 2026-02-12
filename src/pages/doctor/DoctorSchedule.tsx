@@ -28,10 +28,8 @@ export default function DoctorSchedule() {
                     *,
                     patient:patient_id (
                         id,
-                        profiles:id (
-                            full_name,
-                            avatar_url
-                        )
+                        full_name,
+                        avatar_url
                     )
                 `)
                 .eq('doctor_id', user?.id)
@@ -128,7 +126,7 @@ export default function DoctorSchedule() {
                                                         <User className="w-6 h-6 text-gray-400" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h4 className="font-bold text-gray-900 truncate tracking-tight">{appt.patient.profiles.full_name}</h4>
+                                                        <h4 className="font-bold text-gray-900 truncate tracking-tight">{appt.patient?.full_name}</h4>
                                                         <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
                                                             <span className="flex items-center gap-1">
                                                                 <CalendarIcon className="w-3 h-3 text-primary-500" />

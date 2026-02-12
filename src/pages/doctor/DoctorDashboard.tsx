@@ -37,10 +37,8 @@ export default function DoctorDashboard() {
                     *,
                     patient:patient_id (
                         id,
-                        profiles:id (
-                            full_name,
-                            avatar_url
-                        )
+                        full_name,
+                        avatar_url
                     )
                 `)
                 .eq('doctor_id', user?.id)
@@ -55,9 +53,7 @@ export default function DoctorDashboard() {
                     *,
                     patient:patient_id (
                         id,
-                        profiles:id (
-                            full_name
-                        )
+                        full_name
                     )
                 `)
                 .eq('doctor_id', user?.id)
@@ -106,7 +102,9 @@ export default function DoctorDashboard() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
                 <div>
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
-                        Welcome back, <span className="text-primary-600">Dr. {user?.name?.split(' ').pop()}</span> 👋
+                        Welcome back, <span className="text-primary-600">
+                            {user?.name?.toLowerCase().startsWith('dr.') ? user.name : `Dr. ${user?.name?.split(' ').pop()}`}
+                        </span> 👋
                     </h1>
                     <p className="text-gray-500 mt-1 font-medium">You have {stats.todayAppts} appointments scheduled for today.</p>
                 </div>
@@ -159,11 +157,11 @@ export default function DoctorDashboard() {
                                         <span className="text-xs font-bold text-primary-600">{new Date(appt.appointment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">{appt.patient.profiles.full_name}</h3>
+                                        <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">{appt.patient?.full_name}</h3>
                                         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Reason: {appt.reason || 'General Consultation'}</p>
                                     </div>
                                     <Link
-                                        to={`/doctor/patients/${appt.patient.id}`}
+                                        to={`/doctor/patients/${appt.patient?.id}`}
                                         className="px-6 py-2.5 rounded-xl bg-primary-50 text-primary-600 text-xs font-bold uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all shadow-sm"
                                     >
                                         Start
@@ -198,7 +196,7 @@ export default function DoctorDashboard() {
                                             <FileText className="w-6 h-6" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-gray-900 text-sm group-hover:text-primary-600 transition-colors truncate">{report.patient.profiles.full_name}</h4>
+                                            <h4 className="font-bold text-gray-900 text-sm group-hover:text-primary-600 transition-colors truncate">{report.patient?.full_name}</h4>
                                             <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{report.title}</p>
                                             <div className="flex items-center gap-2 mt-2">
                                                 <div className="h-1 flex-1 bg-gray-100 rounded-full overflow-hidden">
