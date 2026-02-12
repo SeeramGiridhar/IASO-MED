@@ -59,9 +59,9 @@ export default function Footer() {
                     <div>
                         <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Contact</h4>
                         <ul className="space-y-3">
-                            <li className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4 text-primary-400" /> support@iasomed.com</li>
-                            <li className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4 text-primary-400" /> +1 (800) 123-4567</li>
-                            <li className="flex items-start gap-2 text-sm"><MapPin className="w-4 h-4 text-primary-400 mt-0.5" /> 123 Medical Drive, San Francisco, CA 94103</li>
+                            <li className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4 text-primary-400" /> giridharpandu22@gmail.com</li>
+                            <li className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4 text-primary-400" /> +91 75694 50282</li>
+                            <li className="flex items-start gap-2 text-sm"><MapPin className="w-4 h-4 text-primary-400 mt-0.5" /> Hyderabad, India</li>
                         </ul>
                     </div>
                 </div>
