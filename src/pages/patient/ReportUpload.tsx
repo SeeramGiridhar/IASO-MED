@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, Camera, FileText, X, Image as ImageIcon, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, Camera, FileText, X, Image as ImageIcon, Loader2, AlertCircle, CheckCircle2, Brain } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { analyzeMedicalReport } from '../../lib/aiAnalysis';
 
 const reportTypes = ['Blood Test', 'X-Ray', 'MRI / CT Scan', 'Prescription', 'Lab Report', 'Other'];
 
@@ -16,8 +17,10 @@ export default function ReportUpload() {
     const [notes, setNotes] = useState('');
     const [dragOver, setDragOver] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState(false);
+    const [analysisProgress, setAnalysisProgress] = useState('');
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -43,6 +46,8 @@ export default function ReportUpload() {
         setError(null);
 
         try {
+            setAnalysisProgress('Uploading files...');
+
             // 1. Upload each file to Supabase Storage
             const uploadPromises = files.map(async (file) => {
                 const fileExt = file.name.split('.').pop();
@@ -59,17 +64,39 @@ export default function ReportUpload() {
 
             const uploadedPaths = await Promise.all(uploadPromises);
 
-            // 2. Save metadata to the reports table
-            // For now, we take the first uploaded file path as the primary file_url
-            // In a more complex setup, we might support multiple files per report entry
+            // 2. Analyze the first file with AI
+            setIsAnalyzing(true);
+            setAnalysisProgress('Analyzing report with AI...');
+
+
+            let aiSummary = 'AI analysis pending...';
+            let reportStatus = 'pending';
+
+            try {
+                const analysis = await analyzeMedicalReport(files[0]);
+
+                aiSummary = analysis.summary;
+                reportStatus = analysis.severity;
+
+                setAnalysisProgress('Analysis complete!');
+            } catch (aiError: any) {
+                console.warn('AI analysis failed, continuing without it:', aiError);
+                aiSummary = 'AI analysis unavailable. Please review the uploaded report manually or consult with a doctor.';
+            }
+
+            // 3. Save metadata to the reports table
+            setAnalysisProgress('Saving report...');
+
             const { error: dbError } = await supabase.from('reports').insert({
                 patient_id: user.id,
                 title: `${reportType} - ${hospitalName || 'Report'}`,
                 category: reportType,
                 report_date: reportDate,
-                file_url: uploadedPaths[0], // Primary file
-                ai_summary: 'Processing report with AI...', // Placeholder
-                status: 'pending'
+                report_type: reportType,
+                hospital_clinic: hospitalName,
+                file_url: uploadedPaths[0],
+                notes: aiSummary,
+                status: reportStatus
             });
 
             if (dbError) throw dbError;
@@ -81,6 +108,7 @@ export default function ReportUpload() {
             setError(err.message || 'An error occurred during upload. Please ensure you have configured Supabase Storage.');
         } finally {
             setIsUploading(false);
+            setIsAnalyzing(false);
         }
     };
 
@@ -96,6 +124,16 @@ export default function ReportUpload() {
                     <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 text-red-600 font-medium">
                         <AlertCircle className="w-5 h-5 shrink-0" />
                         <p>{error}</p>
+                    </div>
+                )}
+
+                {isAnalyzing && analysisProgress && (
+                    <div className="p-4 bg-primary-50 border border-primary-100 rounded-2xl flex items-start gap-3 text-primary-700 font-medium animate-pulse">
+                        <Brain className="w-5 h-5 shrink-0 animate-spin" />
+                        <div>
+                            <p className="font-bold">AI Analysis in Progress</p>
+                            <p className="text-sm opacity-90">{analysisProgress}</p>
+                        </div>
                     </div>
                 )}
 

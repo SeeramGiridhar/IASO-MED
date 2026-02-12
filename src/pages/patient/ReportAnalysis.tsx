@@ -136,6 +136,17 @@ export default function ReportAnalysis() {
                             <p className="text-primary-50 text-lg font-medium leading-relaxed italic opacity-95">
                                 "{report.notes || 'No specific notes were added for this report. The AI analysis indicates that your vital markers are in a healthy equilibrium. Continue your current health regimen and schedule periodic checkups.'}"
                             </p>
+                            <button
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent('open-iaso-chat', {
+                                        detail: { message: `I have a question about my ${report.report_type} report: ${report.title}. Can you explain it more?` }
+                                    }));
+                                }}
+                                className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-white text-sm font-bold transition-all border border-white/20"
+                            >
+                                Ask IASO AI for more details
+                                <ArrowLeft className="w-4 h-4 rotate-180" />
+                            </button>
                         </div>
                     </div>
 
