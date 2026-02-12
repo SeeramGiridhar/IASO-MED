@@ -46,6 +46,22 @@ export default function ChatBot() {
         return () => window.removeEventListener('open-iaso-chat', handleOpenChat);
     }, []);
 
+    const getDemoResponse = (userInput: string): string => {
+        const input = userInput.toLowerCase();
+
+        if (input.includes('blood') || input.includes('test') || input.includes('lab')) {
+            return "I can help you understand blood test results! In a real scenario, I would analyze your specific values and explain what they mean. Common blood tests include CBC (Complete Blood Count), cholesterol panels, and glucose levels. For personalized insights, please add OpenAI credits to enable AI analysis or consult with a doctor.";
+        } else if (input.includes('report') || input.includes('analysis')) {
+            return "I can analyze medical reports and provide patient-friendly explanations. Upload your report through the 'Upload Report' section, and once OpenAI credits are added, I'll provide detailed AI-powered insights. For now, you can view your uploaded reports in the Reports section.";
+        } else if (input.includes('appointment') || input.includes('doctor')) {
+            return "You can book appointments with doctors through our platform! Go to the 'Find Doctors' section to search for specialists based on your needs. I'd provide personalized doctor recommendations with full AI capabilities enabled.";
+        } else if (input.includes('help') || input.includes('how')) {
+            return "I'm IASO AI, your medical assistant! I can help you:\n• Understand medical reports\n• Explain blood test results\n• Find the right doctors\n• Book appointments\n• Answer health questions\n\nNote: Full AI analysis requires OpenAI credits. Please add credits at platform.openai.com or ask your questions and I'll provide helpful guidance!";
+        } else {
+            return "Thank you for your question! I'm currently in demo mode as the OpenAI API quota has been exceeded. To enable full AI-powered responses, please add credits to your OpenAI account. In the meantime, I can still help you navigate the IASO Med platform, upload reports, and book appointments with doctors. How else can I assist you?";
+        }
+    };
+
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
@@ -68,7 +84,7 @@ export default function ChatBot() {
                 setTimeout(() => {
                     const mockResponse: Message = {
                         role: 'assistant',
-                        content: "I'm currently in demo mode. Please set VITE_OPENAI_API_KEY in your .env file to enable live responses. How can I assist you with your medical reports?",
+                        content: getDemoResponse(userMessage.content),
                         timestamp: new Date()
                     };
                     setMessages(prev => [...prev, mockResponse]);
@@ -107,11 +123,19 @@ export default function ChatBot() {
             } else {
                 throw new Error('Invalid response from AI');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Chat error:', error);
+
+            // Check if it's a quota error
+            let errorContent = "I'm sorry, I encountered an error. Please try again later.";
+
+            if (error?.message?.includes('quota') || error?.message?.includes('insufficient')) {
+                errorContent = "⚠️ OpenAI API credits have been exceeded. To enable full AI responses, please add credits at platform.openai.com/account/billing. In the meantime, I can still provide helpful guidance in demo mode! Ask me about blood tests, reports, or finding doctors.";
+            }
+
             const errorMessage: Message = {
                 role: 'assistant',
-                content: "I'm sorry, I encountered an error. Please try again later.",
+                content: errorContent,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
