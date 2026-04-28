@@ -162,7 +162,7 @@ export default function RegisterPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700 ml-1">Gender</label>
-                                <select name="gender" required value={formData.gender} onChange={handleChange} className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-colors font-medium">
+                                <select name="gender" required value={formData.gender} onChange={handleChange} className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium">
                                     <option value="">Select</option>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
@@ -173,14 +173,14 @@ export default function RegisterPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700 ml-1">Blood Group</label>
-                                <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium">
+                                <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium">
                                     <option value="">Select</option>
                                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(g => <option key={g} value={g}>{g}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700 ml-1">Phone</label>
-                                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+1..." className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+1..." className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                             </div>
                         </div>
                     </div>
@@ -190,11 +190,11 @@ export default function RegisterPage() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700 ml-1">Emergency Name</label>
-                            <input type="text" name="emergencyName" required value={formData.emergencyName} onChange={handleChange} placeholder="Contact Name" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                            <input type="text" name="emergencyName" required value={formData.emergencyName} onChange={handleChange} placeholder="Contact Name" className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700 ml-1">Emergency Phone</label>
-                            <input type="tel" name="emergencyPhone" required value={formData.emergencyPhone} onChange={handleChange} placeholder="+1..." className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                            <input type="tel" name="emergencyPhone" required value={formData.emergencyPhone} onChange={handleChange} placeholder="+1..." className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                         </div>
                     </div>
                 );
@@ -211,21 +211,21 @@ export default function RegisterPage() {
                             <label className="text-sm font-bold text-gray-700 ml-1">Professional Name</label>
                             <div className="relative">
                                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="text" name="fullName" required value={formData.fullName} onChange={handleChange} placeholder="Dr. Jane Smith" className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                                <input type="text" name="fullName" required value={formData.fullName} onChange={handleChange} placeholder="Dr. Jane Smith" className="w-full pl-11 pr-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700 ml-1">Email</label>
                             <div className="relative">
                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="doctor@example.com" className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                                <input type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="doctor@example.com" className="w-full pl-11 pr-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700 ml-1">Password</label>
                             <div className="relative">
                                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type={showPassword ? 'text' : 'password'} name="password" required value={formData.password} onChange={handleChange} placeholder="••••••••" className="w-full pl-11 pr-11 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                                <input type={showPassword ? 'text' : 'password'} name="password" required value={formData.password} onChange={handleChange} placeholder="••••••••" className="w-full pl-11 pr-11 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
@@ -238,16 +238,16 @@ export default function RegisterPage() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700 ml-1">Specialization</label>
-                            <input type="text" name="specialization" required value={formData.specialization} onChange={handleChange} placeholder="Cardiology" className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                            <input type="text" name="specialization" required value={formData.specialization} onChange={handleChange} placeholder="Cardiology" className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700 ml-1">License No.</label>
-                                <input type="text" name="license" required value={formData.license} onChange={handleChange} placeholder="MD-123456" className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                                <input type="text" name="license" required value={formData.license} onChange={handleChange} placeholder="MD-123456" className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700 ml-1">Years Exp.</label>
-                                <input type="number" name="experience" required value={formData.experience} onChange={handleChange} placeholder="10" className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                                <input type="number" name="experience" required value={formData.experience} onChange={handleChange} placeholder="10" className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                             </div>
                         </div>
                     </div>
@@ -257,11 +257,11 @@ export default function RegisterPage() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700 ml-1">Hospital / Clinic</label>
-                            <input type="text" name="clinicName" required value={formData.clinicName} onChange={handleChange} placeholder="City Medical" className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none font-medium" />
+                            <input type="text" name="clinicName" required value={formData.clinicName} onChange={handleChange} placeholder="City Medical" className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700 ml-1">Clinic Address</label>
-                            <textarea name="clinicAddress" required value={formData.clinicAddress} onChange={handleChange} rows={2} placeholder="Address here..." className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none font-medium resize-none" />
+                            <textarea name="clinicAddress" required value={formData.clinicAddress} onChange={handleChange} rows={2} placeholder="Address here..." className="w-full px-4 py-3 bg-white border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-all font-medium" />
                         </div>
                     </div>
                 );
@@ -313,7 +313,7 @@ export default function RegisterPage() {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="flex-1 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-700 transition-all flex items-center justify-center gap-2"
                             >
                                 {isLoading ? 'Please wait...' : step === totalSteps ? 'Complete Signup' : 'Next Step'}
                                 {!isLoading && (step === totalSteps ? <CheckCircle2 className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />)}

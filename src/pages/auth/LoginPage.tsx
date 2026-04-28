@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Heart, ChevronRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Heart, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function LoginPage() {
@@ -121,7 +121,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-4 bg-primary-600 text-white font-bold rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-700 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                            className="w-full py-4 bg-primary-600 text-white font-bold rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-700 transition-all flex items-center justify-center gap-2 group"
                         >
                             {isLoading ? (
                                 <>
@@ -129,10 +129,7 @@ export default function LoginPage() {
                                     Signing in...
                                 </>
                             ) : (
-                                <>
-                                    Sign In
-                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </>
+                                'Sign In'
                             )}
                         </button>
                     </form>
