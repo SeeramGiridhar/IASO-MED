@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Share2, Calendar, Brain, CheckCircle2, AlertTriangle, Printer, Loader2, FileText, Info, Paperclip } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Calendar, Brain, CheckCircle2, AlertTriangle, Printer, Loader2, FileText, Info, Paperclip, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface MarkerItem {
@@ -45,6 +45,7 @@ export default function ReportAnalysis() {
     const fetchReport = useCallback(async () => {
         if (!reportId) return;
         setIsLoading(true);
+        setReport(null); // Clear previous report so values never carry over
         setError(null);
         try {
             const { data, error: fetchError } = await supabase
@@ -73,6 +74,7 @@ export default function ReportAnalysis() {
             case 'normal': return { bg: 'bg-green-50', text: 'text-green-700', bar: 'bg-green-400', icon: CheckCircle2 };
             case 'warning': return { bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-400', icon: AlertTriangle };
             case 'critical': return { bg: 'bg-red-50', text: 'text-red-700', bar: 'bg-red-400', icon: AlertTriangle };
+            case 'pending': return { bg: 'bg-blue-50', text: 'text-blue-700', bar: 'bg-blue-400', icon: Clock };
             default: return { bg: 'bg-gray-50', text: 'text-gray-700', bar: 'bg-gray-400', icon: Info };
         }
     };
@@ -152,7 +154,34 @@ export default function ReportAnalysis() {
         )
     );
 
-    const currentStatus = getStatusColor(hasValidAnalysis ? (report.status || 'normal') : 'pending');
+    // Show "Analysis pending" only when processing is actually pending
+    const isProcessingPending = Boolean(
+        !hasValidAnalysis &&
+        report.status === 'pending'
+    );
+
+    const getDisplayStatus = () => {
+        if (report.status === 'reviewed') return 'Doctor Reviewed';
+        if (hasValidAnalysis) {
+            if (report.status === 'critical') return 'Critical Finding';
+            if (report.status === 'warning') return 'Attention Needed';
+            if (report.status === 'normal') return 'Normal';
+            return 'Analyzed';
+        }
+        if (isProcessingPending) return 'Analysis Pending';
+        return 'Analysis Unavailable';
+    };
+
+    const getDisplayStatusDescription = () => {
+        if (report.status === 'reviewed') return 'A doctor has reviewed this report.';
+        if (hasValidAnalysis) return 'Automated findings extracted from uploaded document.';
+        if (isProcessingPending) return 'Document analysis is currently in progress.';
+        return 'Automated analysis is unavailable for this document.';
+    };
+
+    const currentStatus = getStatusColor(
+        hasValidAnalysis ? (report.status || 'normal') : (isProcessingPending ? 'pending' : 'unavailable')
+    );
     const StatusIcon = currentStatus.icon;
 
     // Attachments list
@@ -229,7 +258,12 @@ export default function ReportAnalysis() {
                                 <h2 className="text-lg font-bold tracking-tight">Intelligence Breakdown</h2>
                                 {hasValidAnalysis ? (
                                     <span className="ml-auto px-3.5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/30">
-                                        AI Verified
+                                        AI Insights
+                                    </span>
+                                ) : isProcessingPending ? (
+                                    <span className="ml-auto px-3.5 py-1.5 bg-blue-500/30 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-300 text-blue-100 flex items-center gap-1.5">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Analysis Pending
                                     </span>
                                 ) : (
                                     <span className="ml-auto px-3.5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/30 text-amber-200">
@@ -270,10 +304,22 @@ export default function ReportAnalysis() {
                                         <ArrowLeft className="w-4 h-4 rotate-180" />
                                     </button>
                                 </>
+                            ) : isProcessingPending ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <Loader2 className="w-5 h-5 animate-spin text-primary-200" />
+                                        <p className="text-primary-100 text-base font-semibold">
+                                            Analysis is currently pending for this document.
+                                        </p>
+                                    </div>
+                                    <p className="text-primary-100 text-sm leading-relaxed opacity-90">
+                                        Our AI is processing the uploaded document to extract biomarkers and clinical findings. Please refresh in a moment.
+                                    </p>
+                                </div>
                             ) : (
                                 <div className="space-y-4">
                                     <p className="text-primary-100 text-base font-medium leading-relaxed">
-                                        Automated AI analysis is unavailable for this document. You can download the uploaded report below to review it directly or share it with a doctor during consultation.
+                                        Analysis unavailable. No automated findings were generated for this document. You can download the uploaded report below to review it directly or share it with a doctor during consultation.
                                     </p>
                                     <button
                                         onClick={() => handleDownload()}
@@ -287,14 +333,17 @@ export default function ReportAnalysis() {
                         </div>
                     </div>
 
-                    {/* Patient Notes (if provided by patient) */}
+                    {/* Patient Notes (Separate from AI analysis) */}
                     {(report.patient_notes || report.notes) && (
                         <div className="bg-white rounded-[2.5rem] border-2 border-gray-50 p-8 shadow-xl shadow-gray-100/50">
-                            <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-primary-600" />
-                                Patient Notes & Clinical Context
+                                Patient Notes (User Provided)
                             </h2>
-                            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line bg-gray-50/60 p-4 rounded-2xl border border-gray-100">
+                            <p className="text-xs text-gray-400 font-medium mb-4">
+                                Notes provided by the patient at the time of upload, kept separate from AI analysis.
+                            </p>
+                            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line bg-gray-50/70 p-4 rounded-2xl border border-gray-100 font-medium">
                                 {report.patient_notes || report.notes}
                             </p>
                         </div>
@@ -381,6 +430,16 @@ export default function ReportAnalysis() {
                                     </div>
                                 ))}
                             </div>
+                        ) : isProcessingPending ? (
+                            <div className="py-12 text-center">
+                                <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-500">
+                                    <Clock className="w-8 h-8 animate-pulse" />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Analysis Pending</h3>
+                                <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">
+                                    Document processing is underway. The extracted findings will appear here once analysis completes.
+                                </p>
+                            </div>
                         ) : (
                             <div className="py-12 text-center">
                                 <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-400">
@@ -410,12 +469,10 @@ export default function ReportAnalysis() {
                             <StatusIcon className={`w-10 h-10 ${currentStatus.text}`} />
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
-                            Status: {hasValidAnalysis ? (report.status || 'Verified') : 'Pending Review'}
+                            Status: {getDisplayStatus()}
                         </h3>
                         <p className="text-gray-500 font-medium leading-relaxed">
-                            {hasValidAnalysis 
-                                ? 'Analysis generated from submitted medical documentation.' 
-                                : 'Awaiting clinical review or doctor evaluation.'}
+                            {getDisplayStatusDescription()}
                         </p>
                     </div>
 

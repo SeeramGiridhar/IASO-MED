@@ -11,8 +11,6 @@ import {
     Upload,
     Search,
     TrendingUp,
-    Star,
-    Users,
     Zap,
     Clock,
     ChevronRight,

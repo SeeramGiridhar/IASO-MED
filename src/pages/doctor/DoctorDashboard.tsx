@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Users, FileText, Star, TrendingUp, ChevronRight, Loader2 } from 'lucide-react';
+import { Calendar, Users, FileText, Star, TrendingUp, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -29,17 +29,24 @@ export default function DoctorDashboard() {
     const { user } = useAuth();
     const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([]);
     const [pendingReports, setPendingReports] = useState<PendingReport[]>([]);
-    const [stats, setStats] = useState({
-        todayAppts: 0,
-        pendingReviews: 0,
-        totalPatients: 0,
-        rating: '4.9'
+    const [stats, setStats] = useState<{
+        todayAppts: number | null;
+        pendingReviews: number | null;
+        totalPatients: number | null;
+        rating: string | null;
+    }>({
+        todayAppts: null,
+        pendingReviews: null,
+        totalPatients: null,
+        rating: null
     });
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchDoctorData = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
+        setError(null);
         try {
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
@@ -47,7 +54,7 @@ export default function DoctorDashboard() {
             todayEnd.setHours(23, 59, 59, 999);
 
             // Fetch today's appointments
-            const { data: apptData } = await supabase
+            const { data: apptData, error: apptErr } = await supabase
                 .from('appointments')
                 .select(`
                     id,
@@ -64,8 +71,10 @@ export default function DoctorDashboard() {
                 .lte('appointment_date', todayEnd.toISOString())
                 .order('appointment_date', { ascending: true });
 
-            // Fetch pending reports
-            const { data: reportsData } = await supabase
+            if (apptErr) throw apptErr;
+
+            // Fetch pending reports assigned to this doctor
+            const { data: reportsData, error: reportsErr } = await supabase
                 .from('reports')
                 .select(`
                     id,
@@ -80,22 +89,28 @@ export default function DoctorDashboard() {
                 .eq('status', 'pending')
                 .limit(5);
 
+            if (reportsErr) throw reportsErr;
+
             // Get total unique patients
-            const { count: patientCount } = await supabase
+            const { count: patientCount, error: countErr } = await supabase
                 .from('appointments')
                 .select('patient_id', { count: 'exact', head: true })
                 .eq('doctor_id', user.id);
 
+            if (countErr) throw countErr;
+
             // Get doctor profile info for actual rating
-            const { data: docRecord } = await supabase
+            const { data: docRecord, error: docErr } = await supabase
                 .from('doctors')
                 .select('rating')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
 
-            const doctorRating = docRecord?.rating && Number(docRecord.rating) > 0 
+            if (docErr) throw docErr;
+
+            const doctorRating = docRecord?.rating != null && Number(docRecord.rating) > 0 
                 ? Number(docRecord.rating).toFixed(1) 
-                : 'New';
+                : 'No reviews yet';
 
             const formattedAppts: TodayAppointment[] = (apptData || []).map((a) => {
                 const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
@@ -129,11 +144,13 @@ export default function DoctorDashboard() {
             setStats({
                 todayAppts: formattedAppts.length,
                 pendingReviews: formattedReports.length,
-                totalPatients: patientCount || 0,
+                totalPatients: patientCount ?? 0,
                 rating: doctorRating
             });
-        } catch (error) {
-            console.error('Error fetching doctor dashboard data:', error);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error fetching dashboard data';
+            console.error('Error fetching doctor dashboard data:', msg);
+            setError('Failed to load dashboard data. Please check your connection and try again.');
         } finally {
             setIsLoading(false);
         }
@@ -144,10 +161,10 @@ export default function DoctorDashboard() {
     }, [fetchDoctorData]);
 
     const statsConfig = [
-        { label: "Today's Appts", value: stats.todayAppts.toString(), icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Pending Reviews', value: stats.pendingReviews.toString(), icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
-        { label: 'Total Patients', value: stats.totalPatients.toString(), icon: Users, color: 'text-primary-600', bg: 'bg-primary-50' },
-        { label: 'Avg. Rating', value: stats.rating, icon: Star, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { label: "Today's Appts", value: stats.todayAppts !== null ? stats.todayAppts.toString() : '-', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Pending Reviews', value: stats.pendingReviews !== null ? stats.pendingReviews.toString() : '-', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Total Patients', value: stats.totalPatients !== null ? stats.totalPatients.toString() : '-', icon: Users, color: 'text-primary-600', bg: 'bg-primary-50' },
+        { label: 'Avg. Rating', value: stats.rating || 'No reviews yet', icon: Star, color: 'text-purple-600', bg: 'bg-purple-50' },
     ];
 
     if (isLoading) {
@@ -176,6 +193,19 @@ export default function DoctorDashboard() {
                     Professional Profile
                 </Link>
             </div>
+
+            {error && (
+                <div className="mb-8 p-5 bg-red-50 border border-red-100 rounded-3xl flex items-center gap-4 text-red-600">
+                    <AlertCircle className="w-6 h-6 shrink-0" />
+                    <p className="font-medium text-sm">{error}</p>
+                    <button
+                        onClick={fetchDoctorData}
+                        className="ml-auto px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -284,7 +314,7 @@ export default function DoctorDashboard() {
                             <div className="space-y-4 mb-8">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-primary-100 font-medium">Total Consultations</span>
-                                    <span className="font-black text-lg">+{stats.totalPatients}</span>
+                                    <span className="font-black text-lg">{stats.totalPatients ?? 0}</span>
                                 </div>
                                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                                     <div className="h-full bg-white/40 w-2/3" />

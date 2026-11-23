@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, Search, Filter, ChevronRight, Loader2, Calendar, User } from 'lucide-react';
+import { FileText, Search, Filter, ChevronRight, Loader2, Calendar, User, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -22,6 +22,7 @@ export default function DoctorReportsReview() {
     const { user } = useAuth();
     const [reports, setReports] = useState<ReviewReport[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     const debouncedSearch = useDebounce(searchQuery, 300);
@@ -29,8 +30,9 @@ export default function DoctorReportsReview() {
     const fetchReports = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
+        setError(null);
         try {
-            const { data, error } = await supabase
+            const { data, error: fetchErr } = await supabase
                 .from('reports')
                 .select(`
                     id,
@@ -47,7 +49,7 @@ export default function DoctorReportsReview() {
                 .eq('doctor_id', user.id)
                 .order('report_date', { ascending: false });
 
-            if (error) throw error;
+            if (fetchErr) throw fetchErr;
 
             const formatted: ReviewReport[] = (data || []).map((r) => {
                 const patientData = Array.isArray(r.patient) ? r.patient[0] : r.patient;
@@ -66,8 +68,10 @@ export default function DoctorReportsReview() {
             });
 
             setReports(formatted);
-        } catch (error) {
-            console.error('Error fetching reports:', error);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error fetching reports';
+            console.error('Error fetching reports:', msg);
+            setError('Failed to load patient reports. Please check your connection and try again.');
         } finally {
             setIsLoading(false);
         }
@@ -92,6 +96,19 @@ export default function DoctorReportsReview() {
                     <p className="text-gray-500 mt-1 font-medium">Review and analyze reports assigned to you.</p>
                 </div>
             </div>
+
+            {error && (
+                <div className="mb-8 p-5 bg-red-50 border border-red-100 rounded-3xl flex items-center gap-4 text-red-600">
+                    <AlertCircle className="w-6 h-6 shrink-0" />
+                    <p className="font-medium text-sm">{error}</p>
+                    <button
+                        onClick={fetchReports}
+                        className="ml-auto px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
 
             {/* Filters */}
             <div className="bg-white p-4 rounded-2xl border-2 border-gray-50 mb-8 flex flex-col md:flex-row gap-4">
@@ -157,9 +174,18 @@ export default function DoctorReportsReview() {
                             </div>
 
                             <div className="flex items-center gap-3 md:ml-auto">
-                                <div className={`px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${report.status === 'pending'
-                                    ? 'bg-amber-50 text-amber-600 border-amber-100'
-                                    : 'bg-green-50 text-green-600 border-green-100'
+                                <div className={`px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${
+                                    report.status === 'pending'
+                                        ? 'bg-blue-50 text-blue-600 border-blue-100'
+                                        : report.status === 'reviewed'
+                                        ? 'bg-purple-50 text-purple-600 border-purple-100'
+                                        : report.status === 'normal' || report.status === 'analyzed'
+                                        ? 'bg-green-50 text-green-600 border-green-100'
+                                        : report.status === 'warning'
+                                        ? 'bg-amber-50 text-amber-600 border-amber-100'
+                                        : report.status === 'critical'
+                                        ? 'bg-red-50 text-red-600 border-red-100'
+                                        : 'bg-gray-50 text-gray-600 border-gray-100'
                                     }`}>
                                     {report.status}
                                 </div>

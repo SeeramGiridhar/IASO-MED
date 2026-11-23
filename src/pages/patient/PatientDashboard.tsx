@@ -4,15 +4,13 @@ import {
     FileText,
     Calendar,
     Upload,
-    Heart,
-    Activity,
-    Droplets,
     Brain,
     ChevronRight,
     Loader2,
     Clock,
-    ArrowUpRight,
-    Plus
+    Plus,
+    CheckCircle2,
+    AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -41,22 +39,73 @@ export default function PatientDashboard() {
     const { user } = useAuth();
     const [recentReports, setRecentReports] = useState<RecentReport[]>([]);
     const [upcomingAppointments, setUpcomingAppointments] = useState<UpcomingAppointment[]>([]);
+    const [stats, setStats] = useState<{
+        totalReports: number | null;
+        upcomingConsultations: number | null;
+        pendingReviews: number | null;
+        completedConsultations: number | null;
+    }>({
+        totalReports: null,
+        upcomingConsultations: null,
+        pendingReviews: null,
+        completedConsultations: null
+    });
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchDashboardData = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
+        setError(null);
         try {
-            // Fetch recent reports
-            const { data: reportsData } = await supabase
+            // Fetch total reports count
+            const { count: reportsCount, error: reportsCountErr } = await supabase
+                .from('reports')
+                .select('*', { count: 'exact', head: true })
+                .eq('patient_id', user.id);
+
+            if (reportsCountErr) throw reportsCountErr;
+
+            // Fetch pending reviews count
+            const { count: pendingCount, error: pendingCountErr } = await supabase
+                .from('reports')
+                .select('*', { count: 'exact', head: true })
+                .eq('patient_id', user.id)
+                .eq('status', 'pending');
+
+            if (pendingCountErr) throw pendingCountErr;
+
+            // Fetch upcoming appointments count
+            const nowIso = new Date().toISOString();
+            const { count: upcomingCount, error: upcomingCountErr } = await supabase
+                .from('appointments')
+                .select('*', { count: 'exact', head: true })
+                .eq('patient_id', user.id)
+                .gte('appointment_date', nowIso);
+
+            if (upcomingCountErr) throw upcomingCountErr;
+
+            // Fetch completed consultations count
+            const { count: completedCount, error: completedCountErr } = await supabase
+                .from('appointments')
+                .select('*', { count: 'exact', head: true })
+                .eq('patient_id', user.id)
+                .eq('status', 'completed');
+
+            if (completedCountErr) throw completedCountErr;
+
+            // Fetch recent reports list
+            const { data: reportsData, error: reportsErr } = await supabase
                 .from('reports')
                 .select('id, title, category, report_type, report_date, status')
                 .eq('patient_id', user.id)
                 .order('report_date', { ascending: false })
                 .limit(3);
 
-            // Fetch upcoming appointments
-            const { data: apptData } = await supabase
+            if (reportsErr) throw reportsErr;
+
+            // Fetch upcoming appointments list
+            const { data: apptData, error: apptErr } = await supabase
                 .from('appointments')
                 .select(`
                     id,
@@ -69,9 +118,11 @@ export default function PatientDashboard() {
                     )
                 `)
                 .eq('patient_id', user.id)
-                .gte('appointment_date', new Date().toISOString())
+                .gte('appointment_date', nowIso)
                 .order('appointment_date', { ascending: true })
                 .limit(3);
+
+            if (apptErr) throw apptErr;
 
             const formattedAppts: UpcomingAppointment[] = (apptData || []).map((appt) => {
                 const doctorProfile = Array.isArray(appt.doctor) ? appt.doctor[0] : appt.doctor;
@@ -89,8 +140,16 @@ export default function PatientDashboard() {
 
             setRecentReports(reportsData || []);
             setUpcomingAppointments(formattedAppts);
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error);
+            setStats({
+                totalReports: reportsCount ?? 0,
+                upcomingConsultations: upcomingCount ?? 0,
+                pendingReviews: pendingCount ?? 0,
+                completedConsultations: completedCount ?? 0
+            });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error fetching dashboard data';
+            console.error('Error fetching dashboard data:', msg);
+            setError('Failed to load dashboard data. Please check your connection and try again.');
         } finally {
             setIsLoading(false);
         }
@@ -100,11 +159,11 @@ export default function PatientDashboard() {
         fetchDashboardData();
     }, [fetchDashboardData]);
 
-    const healthMetrics = [
-        { label: 'Heart Rate', value: '72', unit: 'bpm', icon: Heart, trend: 'stable', color: 'text-red-500', bg: 'bg-red-50' },
-        { label: 'Blood Pressure', value: '120/80', unit: 'mmHg', icon: Activity, trend: 'stable', color: 'text-blue-500', bg: 'bg-blue-50' },
-        { label: 'Blood Sugar', value: '95', unit: 'mg/dL', icon: Droplets, trend: 'stable', color: 'text-amber-500', bg: 'bg-amber-50' },
-        { label: 'SpO2', value: '98', unit: '%', icon: Activity, trend: 'stable', color: 'text-green-500', bg: 'bg-green-50' },
+    const statsCards = [
+        { label: 'Total Reports', value: stats.totalReports !== null ? stats.totalReports.toString() : '-', icon: FileText, color: 'text-primary-600', bg: 'bg-primary-50' },
+        { label: 'Upcoming Visits', value: stats.upcomingConsultations !== null ? stats.upcomingConsultations.toString() : '-', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Pending Reviews', value: stats.pendingReviews !== null ? stats.pendingReviews.toString() : '-', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Completed Visits', value: stats.completedConsultations !== null ? stats.completedConsultations.toString() : '-', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
     ];
 
     if (isLoading) {
@@ -123,7 +182,7 @@ export default function PatientDashboard() {
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
                         Hello, <span className="text-primary-600">{user?.name?.split(' ')[0] || 'Patient'}</span> 👋
                     </h1>
-                    <p className="text-gray-500 mt-1 font-medium">Your health journey is looking great today.</p>
+                    <p className="text-gray-500 mt-1 font-medium">Manage your medical reports, track appointments, and consult with doctors.</p>
                 </div>
                 <Link
                     to="/patient/upload"
@@ -134,21 +193,30 @@ export default function PatientDashboard() {
                 </Link>
             </div>
 
-            {/* Health Metrics */}
+            {error && (
+                <div className="mb-8 p-5 bg-red-50 border border-red-100 rounded-3xl flex items-center gap-4 text-red-600">
+                    <AlertCircle className="w-6 h-6 shrink-0" />
+                    <p className="font-medium text-sm">{error}</p>
+                    <button
+                        onClick={fetchDashboardData}
+                        className="ml-auto px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
+
+            {/* Health Statistics Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                {healthMetrics.map((metric) => (
+                {statsCards.map((metric) => (
                     <div key={metric.label} className="bg-white rounded-[2rem] border-2 border-gray-50 p-6 hover:shadow-2xl hover:shadow-gray-100/50 transition-all duration-300 transform hover:-translate-y-1">
                         <div className="flex items-center justify-between mb-4">
                             <div className={`w-12 h-12 rounded-2xl ${metric.bg} flex items-center justify-center shadow-inner`}>
                                 <metric.icon className={`w-6 h-6 ${metric.color}`} />
                             </div>
-                            <div className="flex items-center gap-1 text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-lg">
-                                <ArrowUpRight className="w-3 h-3" />
-                                +2%
-                            </div>
                         </div>
                         <p className="text-3xl font-black text-gray-900 tracking-tighter">
-                            {metric.value} <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">{metric.unit}</span>
+                            {metric.value}
                         </p>
                         <p className="text-sm text-gray-500 font-bold mt-1 uppercase tracking-widest opacity-60">{metric.label}</p>
                     </div>
@@ -194,8 +262,14 @@ export default function PatientDashboard() {
                                             <span>{new Date(report.report_date).toLocaleDateString()}</span>
                                         </div>
                                     </div>
-                                    <div className="px-4 py-1.5 rounded-xl bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-widest border border-green-100">
-                                        {report.status || 'Analyzed'}
+                                    <div className={`px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${
+                                        report.status === 'normal' || report.status === 'analyzed' ? 'bg-green-50 text-green-600 border-green-100' :
+                                        report.status === 'warning' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                        report.status === 'critical' ? 'bg-red-50 text-red-600 border-red-100' :
+                                        report.status === 'pending' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                        'bg-gray-50 text-gray-600 border-gray-200'
+                                    }`}>
+                                        {report.status === 'pending' ? 'Pending' : report.status || 'Unavailable'}
                                     </div>
                                 </Link>
                             ))
@@ -231,7 +305,7 @@ export default function PatientDashboard() {
                                             <div className="flex-1 w-0.5 bg-gray-100 group-last:hidden mt-2" />
                                         </div>
                                         <div className="flex-1 pb-6 group-last:pb-0">
-                                            <h4 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{appt.doctor?.full_name || 'Dr. Specialist'}</h4>
+                                            <h4 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{appt.doctor?.full_name || 'Doctor'}</h4>
                                             <p className="text-xs text-primary-600 font-bold uppercase mb-2">Consultation</p>
                                             <div className="flex items-center gap-3 text-xs text-gray-400 font-bold">
                                                 <span className="flex items-center gap-1">
@@ -257,7 +331,7 @@ export default function PatientDashboard() {
                                 <h3 className="font-bold text-lg tracking-tight">AI Insights</h3>
                             </div>
                             <p className="text-primary-100 text-sm font-medium leading-relaxed mb-8 opacity-90">
-                                Your medical data is securely processed to reveal trends and potential risks. Upload more reports for high-precision accuracy.
+                                Your medical reports can be analyzed to extract biomarkers, flag abnormal findings, and prepare summaries for your doctor consultations.
                             </p>
                             <Link
                                 to="/patient/upload"

@@ -9,10 +9,10 @@ interface DoctorDetail {
     name: string;
     avatar: string;
     specialization: string;
-    rating: number;
-    hospital: string;
-    fee: number;
-    experience: number;
+    rating: number | null;
+    hospital: string | null;
+    fee: number | null;
+    experience: number | null;
 }
 
 const timeSlots = [
@@ -59,13 +59,13 @@ export default function AppointmentBooking() {
             const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
             setDoctor({
                 id: data.id,
-                name: profile?.full_name || 'Dr. Specialist',
+                name: profile?.full_name || 'Doctor',
                 avatar: profile?.avatar_url || '',
-                specialization: data.specialization || 'Healthcare Professional',
-                rating: data.rating != null ? Number(data.rating) : 0,
-                hospital: data.hospital_clinic || 'Not specified',
-                fee: data.consultation_fee != null ? Number(data.consultation_fee) : 0,
-                experience: data.experience_years != null ? Number(data.experience_years) : 0
+                specialization: data.specialization || 'Not specified',
+                rating: data.rating != null && Number(data.rating) > 0 ? Number(data.rating) : null,
+                hospital: data.hospital_clinic || null,
+                fee: data.consultation_fee != null ? Number(data.consultation_fee) : null,
+                experience: data.experience_years != null ? Number(data.experience_years) : null
             });
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Could not load doctor details.';
@@ -196,7 +196,7 @@ export default function AppointmentBooking() {
                         </div>
                         <div className="space-y-1 col-span-2">
                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Clinic Address</span>
-                            <p className="font-bold text-gray-700">{doctor.hospital || 'Consultation Clinic'}</p>
+                            <p className="font-bold text-gray-700">{doctor.hospital || 'Not provided'}</p>
                         </div>
                     </div>
                 </div>

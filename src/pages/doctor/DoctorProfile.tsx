@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, ChevronRight, Camera, Stethoscope, Award, Building2, DollarSign, LogOut, Loader2, Globe, ShieldCheck } from 'lucide-react';
+import { Star, ChevronRight, Camera, Stethoscope, Award, Building2, DollarSign, LogOut, Loader2, Globe, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -24,12 +24,14 @@ export default function DoctorProfile() {
     const { user, logout } = useAuth();
     const [profile, setProfile] = useState<DoctorProfileData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchDoctorProfile = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
+        setError(null);
         try {
-            const { data, error } = await supabase
+            const { data, error: fetchErr } = await supabase
                 .from('doctors')
                 .select(`
                     specialization,
@@ -49,14 +51,16 @@ export default function DoctorProfile() {
                 .eq('id', user.id)
                 .single();
 
-            if (error) throw error;
+            if (fetchErr) throw fetchErr;
             const profileRecord = Array.isArray(data?.profiles) ? data.profiles[0] : data?.profiles;
             setProfile({
                 ...data,
                 profiles: profileRecord || null,
             });
-        } catch (error) {
-            console.error('Error fetching doctor profile:', error);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error fetching doctor profile';
+            console.error('Error fetching doctor profile:', msg);
+            setError('Failed to load profile. Please check your connection and try again.');
         } finally {
             setIsLoading(false);
         }
@@ -70,6 +74,24 @@ export default function DoctorProfile() {
         return (
             <div className="min-h-[60vh] flex items-center justify-center">
                 <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="max-w-md mx-auto px-4 py-20 text-center font-outfit">
+                <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle className="w-10 h-10 text-red-500" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Profile</h1>
+                <p className="text-gray-500 mb-8">{error}</p>
+                <button
+                    onClick={fetchDoctorProfile}
+                    className="inline-flex items-center gap-2 px-8 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all shadow-lg"
+                >
+                    Retry
+                </button>
             </div>
         );
     }
@@ -100,20 +122,26 @@ export default function DoctorProfile() {
                         </div>
 
                         <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Dr. {doctorName.split(' ').pop()}</h2>
-                        <p className="text-primary-600 font-bold uppercase tracking-widest text-xs mb-8">{profile?.specialization || 'Healthcare Professional'}</p>
+                        <p className="text-primary-600 font-bold uppercase tracking-widest text-xs mb-8">{profile?.specialization || 'Not provided'}</p>
 
                         <div className="grid grid-cols-2 gap-4 mb-8">
                             <div className="bg-gray-50 rounded-3xl p-5 border-2 border-white">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Experience</p>
                                 <p className="text-xl font-black text-gray-900">
-                                    {profile?.experience_years != null ? `${profile.experience_years} Yrs` : 'Not set'}
+                                    {profile?.experience_years != null ? `${profile.experience_years} Yrs` : 'Not provided'}
                                 </p>
                             </div>
                             <div className="bg-gray-50 rounded-3xl p-5 border-2 border-white">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Rating</p>
-                                <div className="flex items-center justify-center gap-1 font-black text-gray-900 text-xl">
-                                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                    {profile?.rating && profile.rating > 0 ? Number(profile.rating).toFixed(1) : 'New'}
+                                <div className="flex items-center justify-center gap-1 font-black text-gray-900 text-base">
+                                    {profile?.rating != null && Number(profile.rating) > 0 ? (
+                                        <>
+                                            <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                            <span className="text-xl">{Number(profile.rating).toFixed(1)}</span>
+                                        </>
+                                    ) : (
+                                        <span className="text-sm font-semibold text-gray-500">No reviews yet</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -146,7 +174,7 @@ export default function DoctorProfile() {
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Medical License Number</p>
                                 </div>
                                 <div className="bg-gray-50 p-5 rounded-2xl text-gray-900 font-bold border-2 border-white">
-                                    {profile?.license_number || 'Pending verification'}
+                                    {profile?.license_number || 'Not provided'}
                                 </div>
                             </div>
                             <div className="space-y-4">
@@ -155,7 +183,7 @@ export default function DoctorProfile() {
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Educational Background</p>
                                 </div>
                                 <div className="bg-gray-50 p-5 rounded-2xl text-gray-900 font-bold border-2 border-white">
-                                    {profile?.education || 'Not specified'}
+                                    {profile?.education || 'Not provided'}
                                 </div>
                             </div>
                         </div>
@@ -165,8 +193,8 @@ export default function DoctorProfile() {
                                 <Globe className="w-4 h-4 text-blue-500" />
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Professional Biography</p>
                             </div>
-                            <div className="bg-gray-50 p-6 rounded-[2rem] text-gray-600 text-sm font-medium leading-relaxed border-2 border-white italic">
-                                "{profile?.bio || 'Clinical professional focused on providing high-quality patient care and diagnostic excellence.'}"
+                            <div className="bg-gray-50 p-6 rounded-[2rem] text-gray-600 text-sm font-medium leading-relaxed border-2 border-white">
+                                {profile?.bio || 'Not provided'}
                             </div>
                         </div>
                     </div>
@@ -185,14 +213,14 @@ export default function DoctorProfile() {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Clinic Affiliation</p>
                                 <div className="bg-gray-50 p-5 rounded-2xl text-gray-900 font-bold border-2 border-white flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-primary-500" />
-                                    {profile?.hospital_clinic || 'Not specified'}
+                                    {profile?.hospital_clinic || 'Not provided'}
                                 </div>
                             </div>
                             <div className="space-y-4">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Consultation Fee</p>
                                 <div className="bg-primary-600 p-5 rounded-2xl text-white font-black text-xl flex items-center gap-3 shadow-lg shadow-primary-500/20">
                                     <DollarSign className="w-6 h-6 bg-white/20 rounded-lg p-1" />
-                                    {profile?.consultation_fee != null ? `$${profile.consultation_fee}` : 'Not set'}
+                                    {profile?.consultation_fee != null ? `$${profile.consultation_fee}` : 'Not provided'}
                                     <span className="text-xs font-bold text-white/60 ml-auto uppercase tracking-tighter">Per Session</span>
                                 </div>
                             </div>
