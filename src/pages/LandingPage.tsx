@@ -84,66 +84,49 @@ export default function LandingPage() {
                             </div>
                         </div>
 
-                        {/* Right - Hero Visual */}
+                        {/* Right - Hero Visual: App Workflow Overview */}
                         <div className="relative">
-                            <div className="relative bg-white rounded-3xl shadow-2xl shadow-gray-200/60 border border-gray-100 p-6 lg:p-8">
-                                {/* Mini dashboard mockup */}
-                                <div className="mb-4 flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                                        <Heart className="w-5 h-5 text-white" />
+                            <div className="relative bg-white rounded-3xl shadow-2xl shadow-gray-200/60 border border-gray-100 p-6 lg:p-8 space-y-4">
+                                <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white">
+                                        <Heart className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900">Health Report Analysis</p>
-                                        <p className="text-xs text-gray-500">Just now • Blood Panel</p>
+                                        <p className="text-sm font-bold text-gray-900">How IASO Med Works</p>
+                                        <p className="text-xs text-gray-500">Comprehensive Medical Assistance</p>
                                     </div>
-                                    <span className="ml-auto px-3 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">Normal</span>
                                 </div>
 
-                                {/* Stats row */}
-                                <div className="grid grid-cols-3 gap-3 mb-4">
-                                    {[
-                                        { label: 'Hemoglobin', value: '14.2 g/dL', status: 'normal' },
-                                        { label: 'Glucose', value: '95 mg/dL', status: 'normal' },
-                                        { label: 'Cholesterol', value: '210 mg/dL', status: 'warning' },
-                                    ].map((item) => (
-                                        <div key={item.label} className="bg-gray-50 rounded-xl p-3 text-center">
-                                            <p className="text-xs text-gray-500 mb-1">{item.label}</p>
-                                            <p className="text-sm font-bold text-gray-900">{item.value}</p>
-                                            <div className={`mt-1.5 h-1.5 rounded-full ${item.status === 'normal' ? 'bg-green-400' : 'bg-amber-400'}`} />
+                                <div className="space-y-3">
+                                    <div className="flex items-start gap-3 p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <div className="w-8 h-8 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center shrink-0">
+                                            <Upload className="w-4 h-4" />
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* AI Summary */}
-                                <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-4 border border-primary-100">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Brain className="w-4 h-4 text-primary-600" />
-                                        <span className="text-xs font-semibold text-primary-700">AI Summary</span>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-900">1. Upload Medical Reports</p>
+                                            <p className="text-xs text-gray-500 mt-0.5">Upload photos or PDFs of blood panels, scans, or prescriptions.</p>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-gray-700 leading-relaxed">
-                                        Your blood panel results are largely within the normal range. Cholesterol is slightly elevated — consider dietary adjustments and a follow-up in 3 months.
-                                    </p>
-                                </div>
-                            </div>
 
-                            {/* Floating elements */}
-                            <div className="absolute -top-6 -right-6 px-4 py-2 bg-white rounded-xl shadow-lg border border-gray-100 flex items-center gap-2 animate-[float_3s_ease-in-out_infinite]">
-                                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-gray-900">Report Analyzed</p>
-                                    <p className="text-xs text-gray-500">2 seconds ago</p>
-                                </div>
-                            </div>
+                                    <div className="flex items-start gap-3 p-3.5 bg-primary-50/60 rounded-2xl border border-primary-100">
+                                        <div className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center shrink-0">
+                                            <Brain className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-900">2. AI-Powered Insights</p>
+                                            <p className="text-xs text-gray-600 mt-0.5">Translates complex medical terminology and biomarkers into clear summaries.</p>
+                                        </div>
+                                    </div>
 
-                            <div className="absolute -bottom-4 -left-4 px-4 py-2 bg-white rounded-xl shadow-lg border border-gray-100 flex items-center gap-2 animate-[float_3s_ease-in-out_infinite_0.5s]">
-                                <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
-                                    <Calendar className="w-4 h-4 text-primary-600" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-semibold text-gray-900">Dr. Smith available</p>
-                                    <p className="text-xs text-gray-500">Today at 3:00 PM</p>
+                                    <div className="flex items-start gap-3 p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <div className="w-8 h-8 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                                            <Stethoscope className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-900">3. Specialist Consultation</p>
+                                            <p className="text-xs text-gray-500 mt-0.5">Find matching doctors and share reports with explicit consent.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -151,22 +134,22 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Stats Section */}
+            {/* Platform Highlights Section */}
             <section className="py-16 bg-white border-y border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                         {[
-                            { icon: Users, value: '50,000+', label: 'Active Patients' },
-                            { icon: Stethoscope, value: '2,000+', label: 'Verified Doctors' },
-                            { icon: FileText, value: '500K+', label: 'Reports Analyzed' },
-                            { icon: Star, value: '4.9/5', label: 'User Rating' },
-                        ].map((stat) => (
-                            <div key={stat.label} className="text-center">
+                            { icon: Shield, title: 'HIPAA Compliant', label: 'Encrypted document storage' },
+                            { icon: Brain, title: 'AI Extraction', label: 'Plain-language report summaries' },
+                            { icon: Stethoscope, title: 'Doctor Directory', label: 'Find & book specialists' },
+                            { icon: FileText, title: 'Personal Archive', label: 'Organize all your records' },
+                        ].map((item) => (
+                            <div key={item.title} className="text-center">
                                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary-50 mb-3">
-                                    <stat.icon className="w-6 h-6 text-primary-600" />
+                                    <item.icon className="w-6 h-6 text-primary-600" />
                                 </div>
-                                <p className="text-2xl lg:text-3xl font-bold text-gray-900">{stat.value}</p>
-                                <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+                                <p className="text-xl font-bold text-gray-900">{item.title}</p>
+                                <p className="text-sm text-gray-500 mt-1">{item.label}</p>
                             </div>
                         ))}
                     </div>
@@ -279,72 +262,34 @@ export default function LandingPage() {
                             </Link>
                         </div>
 
-                        {/* Doctor dashboard preview */}
+                        {/* Doctor Platform Overview */}
                         <div className="relative">
-                            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10">
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    {[
-                                        { label: "Today's Appointments", value: '8', change: '+2' },
-                                        { label: 'Pending Reviews', value: '12', change: '3 urgent' },
-                                        { label: 'Messages', value: '5', change: '2 new' },
-                                        { label: 'Rating', value: '4.9', change: '120 reviews' },
-                                    ].map((stat) => (
-                                        <div key={stat.label} className="bg-white/5 rounded-xl p-4 border border-white/10">
-                                            <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
-                                            <p className="text-2xl font-bold text-white">{stat.value}</p>
-                                            <p className="text-xs text-primary-400 mt-1">{stat.change}</p>
-                                        </div>
-                                    ))}
+                            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/10 space-y-4">
+                                <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                                    <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center text-primary-300">
+                                        <Stethoscope className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-white">Clinical Workflow Management</h3>
+                                        <p className="text-xs text-gray-400">Tools designed for modern medical practices</p>
+                                    </div>
                                 </div>
-                                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                                    <p className="text-xs text-gray-400 mb-3">Upcoming Appointments</p>
-                                    {['Sarah Johnson — 9:00 AM — Blood Work Review', 'Mike Chen — 10:30 AM — Follow-up', 'Emily Davis — 2:00 PM — New Patient'].map((appt) => (
-                                        <div key={appt} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
-                                            <div className="w-2 h-2 rounded-full bg-primary-400" />
-                                            <p className="text-sm text-gray-300">{appt}</p>
-                                        </div>
-                                    ))}
+                                <div className="space-y-3 pt-2">
+                                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                        <p className="text-sm font-semibold text-white">Patient Record Intake</p>
+                                        <p className="text-xs text-gray-400 mt-1">Review shared patient documents and AI summaries prior to consultations.</p>
+                                    </div>
+                                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                        <p className="text-sm font-semibold text-white">Consultation Scheduling</p>
+                                        <p className="text-xs text-gray-400 mt-1">Configure appointment slots and manage upcoming patient visits.</p>
+                                    </div>
+                                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                        <p className="text-sm font-semibold text-white">Direct Communication</p>
+                                        <p className="text-xs text-gray-400 mt-1">Provide clinical reviews and communicate securely with patients.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Testimonials */}
-            <section id="testimonials" className="py-24 bg-gray-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-2xl mx-auto mb-16">
-                        <span className="inline-block px-4 py-1.5 bg-primary-100 text-primary-700 rounded-full text-sm font-medium mb-4">Testimonials</span>
-                        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
-                            Trusted by Thousands
-                        </h2>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            { name: 'Priya Sharma', role: 'Patient', quote: 'IASO Med helped me understand my blood work in seconds. I could finally have an informed conversation with my doctor!', rating: 5 },
-                            { name: 'Dr. Rajesh Patel', role: 'Cardiologist', quote: 'The AI-assisted report review saves me hours every week. My patients come in better informed and our consultations are more productive.', rating: 5 },
-                            { name: 'Ananya Gupta', role: 'Patient', quote: 'Finding the right specialist used to be so stressful. IASO Med recommended a great doctor based on my report findings. Incredible!', rating: 5 },
-                        ].map((testimonial) => (
-                            <div key={testimonial.name} className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
-                                <div className="flex items-center gap-1 mb-4">
-                                    {Array.from({ length: testimonial.rating }).map((_, i) => (
-                                        <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                    ))}
-                                </div>
-                                <p className="text-gray-700 leading-relaxed mb-6 italic">"{testimonial.quote}"</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold text-sm">
-                                        {testimonial.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-gray-900 text-sm">{testimonial.name}</p>
-                                        <p className="text-xs text-gray-500">{testimonial.role}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </section>
@@ -356,7 +301,7 @@ export default function LandingPage() {
                         Ready to Take Control of Your Health?
                     </h2>
                     <p className="text-primary-100 text-lg max-w-2xl mx-auto mb-10">
-                        Join thousands of patients and doctors who trust IASO Med for smarter healthcare management.
+                        Start managing your medical reports, understanding clinical insights, and connecting with doctors today.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link

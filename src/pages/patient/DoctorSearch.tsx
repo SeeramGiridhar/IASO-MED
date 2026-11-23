@@ -61,7 +61,7 @@ export default function DoctorSearch() {
                     avatar: profile?.avatar_url || '',
                     specialization: d.specialization || 'General Medicine',
                     experience: d.experience_years || 0,
-                    hospital: d.hospital_clinic || 'IASO Clinic',
+                    hospital: d.hospital_clinic || 'Independent Practice',
                     fee: d.consultation_fee || 0,
                     rating: d.rating || 0,
                     isVerified: Boolean(d.is_verified),
@@ -191,8 +191,8 @@ export default function DoctorSearch() {
                                     <h3 className="font-bold text-gray-900 text-lg group-hover:text-primary-600 transition-colors truncate">{doctor.name}</h3>
                                     <div className="flex items-center gap-1 text-amber-500 mt-1">
                                         <Star className="w-4 h-4 fill-current" />
-                                        <span className="text-sm font-bold text-gray-900">{doctor.rating || 'N/A'}</span>
-                                        <span className="text-xs text-gray-400 font-medium ml-1">({doctor.experience} yrs exp)</span>
+                                        <span className="text-sm font-bold text-gray-900">{doctor.rating && doctor.rating > 0 ? doctor.rating.toFixed(1) : 'New'}</span>
+                                        <span className="text-xs text-gray-400 font-medium ml-1">({doctor.experience > 0 ? `${doctor.experience} yrs exp` : 'New'})</span>
                                     </div>
                                 </div>
                             </div>

@@ -61,11 +61,11 @@ export default function AppointmentBooking() {
                 id: data.id,
                 name: profile?.full_name || 'Dr. Specialist',
                 avatar: profile?.avatar_url || '',
-                specialization: data.specialization || 'General Practice',
-                rating: data.rating || 4.9,
-                hospital: data.hospital_clinic || 'IASO Clinic',
-                fee: data.consultation_fee || 100,
-                experience: data.experience_years || 5
+                specialization: data.specialization || 'Healthcare Professional',
+                rating: data.rating != null ? Number(data.rating) : 0,
+                hospital: data.hospital_clinic || 'Not specified',
+                fee: data.consultation_fee != null ? Number(data.consultation_fee) : 0,
+                experience: data.experience_years != null ? Number(data.experience_years) : 0
             });
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Could not load doctor details.';
@@ -338,9 +338,9 @@ export default function AppointmentBooking() {
 
                             <div className="flex items-center gap-1.5 text-amber-500 mt-3 font-bold">
                                 <Star className="w-4 h-4 fill-current" />
-                                <span className="text-gray-900">{doctor.rating || 'N/A'}</span>
+                                <span className="text-gray-900">{doctor.rating && doctor.rating > 0 ? doctor.rating.toFixed(1) : 'New'}</span>
                                 <span className="text-gray-300 mx-1 font-normal">|</span>
-                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{doctor.experience} Yrs Exp</span>
+                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{doctor.experience > 0 ? `${doctor.experience} Yrs Exp` : 'Exp: New'}</span>
                             </div>
                         </div>
 
@@ -356,7 +356,7 @@ export default function AppointmentBooking() {
                             <div className="p-5 bg-gray-50 rounded-2xl flex items-center justify-between">
                                 <div className="flex flex-col">
                                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fee</span>
-                                    <span className="text-lg font-bold text-primary-600">${doctor.fee}</span>
+                                    <span className="text-lg font-bold text-primary-600">{doctor.fee > 0 ? `$${doctor.fee}` : 'Free / Not set'}</span>
                                 </div>
                                 <div className="p-3 bg-white rounded-xl text-primary-600 shadow-sm">
                                     <DollarSign className="w-5 h-5" />
