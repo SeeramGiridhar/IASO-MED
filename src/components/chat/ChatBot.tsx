@@ -77,6 +77,42 @@ export default function ChatBot() {
         setIsLoading(true);
 
         try {
+            // Build conversation history for Gemini
+            const conversationHistory = messages
+                .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.content}`)
+                .join('\n');
+
+            // 1. Try secure server-side endpoint first (/api/chat)
+            let serverSuccess = false;
+            try {
+                const apiRes = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage.content, history: conversationHistory })
+                });
+
+                if (apiRes.ok) {
+                    const data = await apiRes.json();
+                    if (data.text) {
+                        const assistantMessage: Message = {
+                            role: 'assistant',
+                            content: data.text,
+                            timestamp: new Date()
+                        };
+                        setMessages(prev => [...prev, assistantMessage]);
+                        serverSuccess = true;
+                    }
+                }
+            } catch {
+                // Endpoint not available (e.g. static host), continue to client fallback
+            }
+
+            if (serverSuccess) {
+                setIsLoading(false);
+                return;
+            }
+
+            // 2. Client fallback with VITE_GEMINI_API_KEY if present
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
             if (!apiKey) {
@@ -93,21 +129,17 @@ export default function ChatBot() {
                 return;
             }
 
-            // Build conversation history for Gemini
-            const conversationHistory = messages
-                .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.content}`)
-                .join('\n');
-
             const fullPrompt = `You are IASO AI, a helpful and professional medical assistant for the IASO Med platform. You help patients understand their medical reports and symptoms. Always include a disclaimer that you are an AI and not a replacement for professional medical advice.
 
 ${conversationHistory}
 User: ${userMessage.content}
 Model:`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-goog-api-key': apiKey,
                 },
                 body: JSON.stringify({
                     contents: [{
