@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Upload, Camera, FileText, X, Image as ImageIcon, Loader2, AlertCircle, CheckCircle2, Brain } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { analyzeMedicalReport } from '../../lib/aiAnalysis';
+import { analyzeMedicalReport, type AnalysisResult } from '../../lib/aiAnalysis';
 
 const reportTypes = ['Blood Test', 'X-Ray', 'MRI / CT Scan', 'Prescription', 'Lab Report', 'Other'];
 
@@ -69,39 +69,66 @@ export default function ReportUpload() {
             setAnalysisProgress('Analyzing report with AI...');
 
 
-            let aiSummary = 'AI analysis pending...';
+            let aiSummary: string | null = null;
             let reportStatus = 'pending';
+            let aiAnalysisData: AnalysisResult | null = null;
 
             try {
                 const analysis = await analyzeMedicalReport(files[0]);
-
+                aiAnalysisData = analysis;
                 aiSummary = analysis.summary;
                 reportStatus = analysis.severity;
-
                 setAnalysisProgress('Analysis complete!');
             } catch (aiError: unknown) {
                 const msg = aiError instanceof Error ? aiError.message : String(aiError);
-                console.warn('AI analysis failed, continuing without it:', msg);
-                aiSummary = 'AI analysis unavailable. Please review the uploaded report manually or consult with a doctor.';
+                console.warn('AI analysis skipped or unavailable:', msg);
+                aiSummary = null;
+                reportStatus = 'pending';
             }
 
             // 3. Save metadata to the reports table
             setAnalysisProgress('Saving report...');
 
-            const { error: dbError } = await supabase.from('reports').insert({
+            const fullPayload = {
                 patient_id: user.id,
                 title: `${reportType} - ${hospitalName || 'Report'}`,
                 category: reportType,
                 report_date: reportDate,
                 report_type: reportType,
-                hospital_clinic: hospitalName,
+                hospital_clinic: hospitalName || null,
                 file_url: uploadedPaths[0],
-                notes: aiSummary,
+                file_urls: uploadedPaths,
+                patient_notes: notes || null,
+                notes: notes || null,
                 ai_summary: aiSummary,
+                ai_analysis: aiAnalysisData,
                 status: reportStatus
-            });
+            };
 
-            if (dbError) throw dbError;
+            const { error: dbError } = await supabase.from('reports').insert(fullPayload);
+
+            if (dbError) {
+                // If migration_v2 columns (file_urls, patient_notes) are not yet created in the DB, gracefully fall back
+                if (dbError.message?.includes('file_urls') || dbError.message?.includes('patient_notes')) {
+                    const fallbackPayload = {
+                        patient_id: user.id,
+                        title: `${reportType} - ${hospitalName || 'Report'}`,
+                        category: reportType,
+                        report_date: reportDate,
+                        report_type: reportType,
+                        hospital_clinic: hospitalName || null,
+                        file_url: uploadedPaths[0],
+                        notes: notes || null,
+                        ai_summary: aiSummary,
+                        ai_analysis: aiAnalysisData,
+                        status: reportStatus
+                    };
+                    const { error: fallbackError } = await supabase.from('reports').insert(fallbackPayload);
+                    if (fallbackError) throw fallbackError;
+                } else {
+                    throw dbError;
+                }
+            }
 
             setUploadSuccess(true);
             setTimeout(() => navigate('/patient/reports'), 2000);

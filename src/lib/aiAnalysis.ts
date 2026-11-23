@@ -3,10 +3,19 @@
  * Uses Google Gemini (gemini-2.0-flash) to analyze medical report images and extract insights
  */
 
-interface AnalysisResult {
+export interface ReportMarker {
+    name: string;
+    value: string;
+    unit?: string;
+    range?: string;
+    status: 'normal' | 'warning' | 'critical';
+}
+
+export interface AnalysisResult {
     summary: string;
     keyFindings: string[];
     recommendations: string[];
+    markers?: ReportMarker[];
     severity: 'normal' | 'warning' | 'critical';
 }
 
@@ -37,23 +46,35 @@ export async function analyzeMedicalReport(file: File): Promise<AnalysisResult> 
                     parts: [
                         {
                             text: `You are a medical AI assistant specialized in analyzing medical reports. Your role is to:
-1. Extract and interpret key medical data from report images
+1. Extract and interpret key medical data from report images accurately
 2. Identify abnormal values and flag them
 3. Provide clear, patient-friendly explanations
-4. Classify severity: normal, warning, or critical
+4. Classify overall severity: normal, warning, or critical
 5. Suggest next steps (always recommend consulting a doctor)
 
 Analyze this medical report image and provide your response in VALID JSON format with this exact structure:
 {
   "summary": "Brief 2-3 sentence overview of the report",
-  "keyFindings": ["Finding 1", "Finding 2", "Finding 3"],
+  "keyFindings": ["Finding 1", "Finding 2"],
   "recommendations": ["Recommendation 1", "Recommendation 2"],
+  "markers": [
+    {
+      "name": "Biomarker or Test Name",
+      "value": "Measured Value",
+      "unit": "Unit (e.g. mg/dL, g/dL, etc.)",
+      "range": "Normal Reference Range",
+      "status": "normal"
+    }
+  ],
   "severity": "normal"
 }
 
 IMPORTANT: 
-- Return ONLY valid JSON, no markdown formatting
-- Always include a disclaimer that this is AI analysis and professional medical consultation is required
+- Return ONLY valid JSON, no markdown formatting, no code fences
+- Extract ONLY genuine findings and lab markers present in the image
+- If quantitative test values are present, extract them into the markers array with status ("normal", "warning", or "critical")
+- If no quantitative laboratory values exist (e.g. prescription, scan, notes), leave "markers": []
+- In recommendations, always state that this is an AI assistive review and certified medical consultation is required
 - severity must be exactly one of: "normal", "warning", or "critical"`
                         },
                         {

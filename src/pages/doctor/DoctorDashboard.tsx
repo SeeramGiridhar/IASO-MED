@@ -86,6 +86,17 @@ export default function DoctorDashboard() {
                 .select('patient_id', { count: 'exact', head: true })
                 .eq('doctor_id', user.id);
 
+            // Get doctor profile info for actual rating
+            const { data: docRecord } = await supabase
+                .from('doctors')
+                .select('rating')
+                .eq('id', user.id)
+                .single();
+
+            const doctorRating = docRecord?.rating && Number(docRecord.rating) > 0 
+                ? Number(docRecord.rating).toFixed(1) 
+                : 'New';
+
             const formattedAppts: TodayAppointment[] = (apptData || []).map((a) => {
                 const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
                 return {
@@ -119,7 +130,7 @@ export default function DoctorDashboard() {
                 todayAppts: formattedAppts.length,
                 pendingReviews: formattedReports.length,
                 totalPatients: patientCount || 0,
-                rating: '4.9'
+                rating: doctorRating
             });
         } catch (error) {
             console.error('Error fetching doctor dashboard data:', error);

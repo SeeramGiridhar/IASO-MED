@@ -1,20 +1,78 @@
-import { useState } from 'react';
-import { User, Phone, Heart, Bell, Shield, LogOut, ChevronRight, Camera } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { User, Phone, Heart, Bell, Shield, LogOut, ChevronRight, Camera, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
+
+interface PatientData {
+    name: string;
+    email: string;
+    phone: string;
+    dob: string;
+    gender: string;
+    bloodGroup: string;
+    allergies: string[];
+    emergencyContact: { name?: string; phone?: string } | null;
+}
 
 export default function PatientProfile() {
     const { user, logout } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
 
-    const [profile] = useState({
+    const [profile, setProfile] = useState<PatientData>({
         name: user?.name || 'Awaiting Setup',
         email: user?.email || 'email@example.com',
         phone: 'Not provided',
         dob: '--/--/----',
         gender: 'Not specified',
         bloodGroup: 'Not set',
-        allergies: 'None recorded',
-        emergencyContact: 'Not set',
+        allergies: [],
+        emergencyContact: null,
     });
+
+    const fetchPatientData = useCallback(async () => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const { data: patientRecord } = await supabase
+                .from('patients')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            const { data: profileRecord } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            setProfile({
+                name: profileRecord?.full_name || user.name || 'Patient',
+                email: profileRecord?.email || user.email || '',
+                phone: (user as unknown as Record<string, unknown>)?.phone as string || 'Not provided',
+                dob: patientRecord?.date_of_birth ? new Date(patientRecord.date_of_birth).toLocaleDateString() : 'Not provided',
+                gender: patientRecord?.gender || 'Not specified',
+                bloodGroup: patientRecord?.blood_group || 'Not set',
+                allergies: patientRecord?.allergies || [],
+                emergencyContact: patientRecord?.emergency_contact || null,
+            });
+        } catch (err) {
+            console.error('Error fetching patient profile:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        fetchPatientData();
+    }, [fetchPatientData]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
@@ -114,9 +172,17 @@ export default function PatientProfile() {
                             <div>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Allergies</p>
                                 <div className="flex flex-wrap gap-2">
-                                    <span className="px-3 py-1.5 bg-gray-50 text-gray-500 rounded-lg text-sm font-medium border border-gray-100">
-                                        No allergies recorded
-                                    </span>
+                                    {profile.allergies && profile.allergies.length > 0 ? (
+                                        profile.allergies.map((allergy, i) => (
+                                            <span key={i} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+                                                {allergy}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="px-3 py-1.5 bg-gray-50 text-gray-500 rounded-lg text-sm font-medium border border-gray-100">
+                                            No known allergies recorded
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <div>
@@ -126,8 +192,14 @@ export default function PatientProfile() {
                                         <Phone className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-gray-900">Emergency setup pending</p>
-                                        <button className="text-xs font-semibold text-primary-600 hover:text-primary-700">Add contact information</button>
+                                        {profile.emergencyContact?.name ? (
+                                            <>
+                                                <p className="text-sm font-bold text-gray-900">{profile.emergencyContact.name}</p>
+                                                <p className="text-xs text-gray-500">{profile.emergencyContact.phone || 'No phone provided'}</p>
+                                            </>
+                                        ) : (
+                                            <p className="text-sm font-bold text-gray-500">Not provided</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>

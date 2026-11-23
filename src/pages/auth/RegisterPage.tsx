@@ -44,14 +44,40 @@ export default function RegisterPage() {
         setError(null);
 
         try {
+            const metadata: Record<string, unknown> = {
+                full_name: formData.fullName,
+                role: userType,
+            };
+
+            if (userType === 'patient') {
+                metadata.date_of_birth = formData.dob || null;
+                metadata.gender = formData.gender || null;
+                metadata.blood_group = formData.bloodGroup || null;
+                metadata.phone = formData.phone || null;
+                if (formData.emergencyName || formData.emergencyPhone) {
+                    metadata.emergency_contact = {
+                        name: formData.emergencyName || '',
+                        phone: formData.emergencyPhone || '',
+                    };
+                }
+                if (formData.allergies) {
+                    metadata.allergies = formData.allergies.split(',').map(s => s.trim()).filter(Boolean);
+                }
+            } else if (userType === 'doctor') {
+                metadata.specialization = formData.specialization || null;
+                metadata.license_number = formData.license || null;
+                metadata.experience_years = formData.experience || null;
+                metadata.hospital_clinic = formData.clinicName || null;
+                metadata.clinic_address = formData.clinicAddress || null;
+                metadata.education = formData.education || null;
+                metadata.consultation_fee = formData.consultationFee || null;
+            }
+
             const { error: signUpError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
-                    data: {
-                        full_name: formData.fullName,
-                        role: userType,
-                    },
+                    data: metadata,
                     emailRedirectTo: `${window.location.origin}/login`
                 }
             });

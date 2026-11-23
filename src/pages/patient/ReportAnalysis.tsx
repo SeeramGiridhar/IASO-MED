@@ -1,7 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Share2, Calendar, Brain, CheckCircle2, AlertTriangle, Printer, Loader2, FileText, Info } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Calendar, Brain, CheckCircle2, AlertTriangle, Printer, Loader2, FileText, Info, Paperclip } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+
+interface MarkerItem {
+    name: string;
+    value: string;
+    unit?: string;
+    range?: string;
+    status: 'normal' | 'warning' | 'critical';
+}
+
+interface AIAnalysisPayload {
+    summary?: string;
+    keyFindings?: string[];
+    recommendations?: string[];
+    markers?: MarkerItem[];
+    severity?: 'normal' | 'warning' | 'critical';
+}
 
 interface ReportDetail {
     id: string;
@@ -10,8 +26,11 @@ interface ReportDetail {
     report_type?: string;
     report_date: string;
     file_url?: string;
+    file_urls?: string[];
     notes?: string;
+    patient_notes?: string;
     ai_summary?: string;
+    ai_analysis?: AIAnalysisPayload | null;
     status: string;
     hospital_clinic?: string;
 }
@@ -21,6 +40,7 @@ export default function ReportAnalysis() {
     const [report, setReport] = useState<ReportDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [downloading, setDownloading] = useState(false);
 
     const fetchReport = useCallback(async () => {
         if (!reportId) return;
@@ -61,10 +81,26 @@ export default function ReportAnalysis() {
         window.print();
     };
 
-    const handleDownload = async () => {
-        if (report?.file_url) {
-            const { data } = supabase.storage.from('medical-reports').getPublicUrl(report.file_url);
-            window.open(data.publicUrl, '_blank');
+    // Authorized download using short-lived signed URLs for private storage bucket
+    const handleDownload = async (targetPath?: string) => {
+        const filePath = targetPath || report?.file_url;
+        if (!filePath) return;
+
+        setDownloading(true);
+        try {
+            const { data, error: signError } = await supabase.storage
+                .from('medical-reports')
+                .createSignedUrl(filePath, 120, { download: true });
+
+            if (signError) throw signError;
+            if (data?.signedUrl) {
+                window.open(data.signedUrl, '_blank');
+            }
+        } catch (err) {
+            console.error('Download error:', err);
+            alert('Failed to generate secure download link. Please check your permissions.');
+        } finally {
+            setDownloading(false);
         }
     };
 
@@ -86,7 +122,7 @@ export default function ReportAnalysis() {
             <div className="min-h-[60vh] flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-10 h-10 text-primary-500 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">Analyzing your report...</p>
+                    <p className="text-gray-500 font-medium">Loading report details...</p>
                 </div>
             </div>
         );
@@ -107,15 +143,24 @@ export default function ReportAnalysis() {
         );
     }
 
-    // Reference findings
-    const mockFindings = [
-        { name: 'White Blood Cells (WBC)', value: '7.2', unit: '×10³/µL', range: '4.5 - 11.0', status: 'normal' },
-        { name: 'Red Blood Cells (RBC)', value: '5.1', unit: '×10⁶/µL', range: '4.5 - 5.5', status: 'normal' },
-        { name: 'Hemoglobin', value: '14.2', unit: 'g/dL', range: '13.5 - 17.5', status: 'normal' },
-    ];
+    const analysis = report.ai_analysis;
+    const hasValidAnalysis = Boolean(
+        analysis && (
+            (analysis.summary && analysis.summary.trim().length > 0) ||
+            (analysis.keyFindings && analysis.keyFindings.length > 0) ||
+            (analysis.markers && analysis.markers.length > 0)
+        )
+    );
 
-    const currentStatus = getStatusColor(report.status || 'normal');
+    const currentStatus = getStatusColor(hasValidAnalysis ? (report.status || 'normal') : 'pending');
     const StatusIcon = currentStatus.icon;
+
+    // Attachments list
+    const attachments = report.file_urls && report.file_urls.length > 0 
+        ? report.file_urls 
+        : report.file_url 
+            ? [report.file_url] 
+            : [];
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-outfit">
@@ -146,10 +191,11 @@ export default function ReportAnalysis() {
 
                 <div className="flex items-center gap-3 md:ml-auto">
                     <button
-                        onClick={handleDownload}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white border-2 border-gray-50 text-gray-600 font-bold hover:bg-gray-50 transition-all text-sm"
+                        onClick={() => handleDownload()}
+                        disabled={downloading}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white border-2 border-gray-50 text-gray-600 font-bold hover:bg-gray-50 transition-all text-sm disabled:opacity-50"
                     >
-                        <Download className="w-4 h-4" />
+                        {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         Download
                     </button>
                     <button
@@ -181,61 +227,178 @@ export default function ReportAnalysis() {
                                     <Brain className="w-6 h-6 text-white" />
                                 </div>
                                 <h2 className="text-lg font-bold tracking-tight">Intelligence Breakdown</h2>
-                                <span className="ml-auto px-3.5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/30">
-                                    AI Verified
-                                </span>
+                                {hasValidAnalysis ? (
+                                    <span className="ml-auto px-3.5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/30">
+                                        AI Verified
+                                    </span>
+                                ) : (
+                                    <span className="ml-auto px-3.5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/30 text-amber-200">
+                                        Analysis Unavailable
+                                    </span>
+                                )}
                             </div>
-                            <p className="text-primary-50 text-lg font-medium leading-relaxed italic opacity-95">
-                                "{report.ai_summary || report.notes || 'The AI analysis indicates that your vital markers are in a healthy equilibrium. Continue your current health regimen and schedule periodic checkups.'}"
-                            </p>
-                            <button
-                                onClick={() => {
-                                    window.dispatchEvent(new CustomEvent('open-iaso-chat', {
-                                        detail: { message: `I have a question about my ${report.report_type || 'medical'} report: ${report.title}. Can you explain it more?` }
-                                    }));
-                                }}
-                                className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-white text-sm font-bold transition-all border border-white/20"
-                            >
-                                Ask IASO AI for more details
-                                <ArrowLeft className="w-4 h-4 rotate-180" />
-                            </button>
+
+                            {hasValidAnalysis ? (
+                                <>
+                                    <p className="text-primary-50 text-lg font-medium leading-relaxed italic opacity-95">
+                                        "{analysis?.summary || report.ai_summary}"
+                                    </p>
+
+                                    {analysis?.recommendations && analysis.recommendations.length > 0 && (
+                                        <div className="mt-6 pt-6 border-t border-white/20">
+                                            <p className="text-xs font-bold uppercase tracking-widest text-primary-200 mb-3">Recommendations & Next Steps</p>
+                                            <ul className="space-y-2">
+                                                {analysis.recommendations.map((rec, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-sm text-primary-50">
+                                                        <span className="text-primary-300 font-bold">•</span>
+                                                        <span>{rec}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => {
+                                            window.dispatchEvent(new CustomEvent('open-iaso-chat', {
+                                                detail: { message: `I have a question about my ${report.report_type || 'medical'} report: ${report.title}. Can you explain it more?` }
+                                            }));
+                                        }}
+                                        className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-white text-sm font-bold transition-all border border-white/20"
+                                    >
+                                        Ask IASO AI for more details
+                                        <ArrowLeft className="w-4 h-4 rotate-180" />
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="space-y-4">
+                                    <p className="text-primary-100 text-base font-medium leading-relaxed">
+                                        Automated AI analysis is unavailable for this document. You can download the uploaded report below to review it directly or share it with a doctor during consultation.
+                                    </p>
+                                    <button
+                                        onClick={() => handleDownload()}
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-primary-700 rounded-xl font-bold text-sm hover:bg-primary-50 transition-all shadow-md"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Download Report Document
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Findings Detail */}
+                    {/* Patient Notes (if provided by patient) */}
+                    {(report.patient_notes || report.notes) && (
+                        <div className="bg-white rounded-[2.5rem] border-2 border-gray-50 p-8 shadow-xl shadow-gray-100/50">
+                            <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-primary-600" />
+                                Patient Notes & Clinical Context
+                            </h2>
+                            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line bg-gray-50/60 p-4 rounded-2xl border border-gray-100">
+                                {report.patient_notes || report.notes}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Multi-File Attachments */}
+                    {attachments.length > 1 && (
+                        <div className="bg-white rounded-[2.5rem] border-2 border-gray-50 p-8 shadow-xl shadow-gray-100/50">
+                            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <Paperclip className="w-5 h-5 text-primary-600" />
+                                Report Attachments ({attachments.length})
+                            </h2>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                {attachments.map((path, idx) => {
+                                    const fileName = path.split('/').pop() || `Attachment ${idx + 1}`;
+                                    return (
+                                        <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <FileText className="w-5 h-5 text-primary-500 shrink-0" />
+                                                <span className="text-xs font-bold text-gray-700 truncate">{fileName}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDownload(path)}
+                                                className="p-2 text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
+                                                title="Download Attachment"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Findings Detail - Dynamic & Truthful Only */}
                     <div className="bg-white rounded-[2.5rem] border-2 border-gray-50 p-8 shadow-xl shadow-gray-100/50">
                         <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                             Patient Results Breakdown
                             <span className="text-gray-300 text-xs font-normal">|</span>
-                            <span className="text-sm text-gray-400 font-bold uppercase tracking-widest">Markers Analyzed</span>
+                            <span className="text-sm text-gray-400 font-bold uppercase tracking-widest">
+                                {hasValidAnalysis ? 'Report Findings' : 'Status'}
+                            </span>
                         </h2>
 
-                        <div className="space-y-6">
-                            {mockFindings.map((finding) => {
-                                const colors = getStatusColor(finding.status);
-                                return (
-                                    <div key={finding.name} className="group p-6 rounded-3xl bg-gray-50/50 border-2 border-transparent hover:border-primary-100 hover:bg-white transition-all cursor-default">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="space-y-1">
-                                                <span className="text-sm font-bold text-gray-900">{finding.name}</span>
-                                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Reference: {finding.range} {finding.unit}</p>
+                        {analysis?.markers && analysis.markers.length > 0 ? (
+                            <div className="space-y-6">
+                                {analysis.markers.map((marker, idx) => {
+                                    const colors = getStatusColor(marker.status);
+                                    return (
+                                        <div key={idx} className="group p-6 rounded-3xl bg-gray-50/50 border-2 border-transparent hover:border-primary-100 hover:bg-white transition-all cursor-default">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="space-y-1">
+                                                    <span className="text-sm font-bold text-gray-900">{marker.name}</span>
+                                                    {marker.range && (
+                                                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Reference: {marker.range} {marker.unit || ''}</p>
+                                                    )}
+                                                </div>
+                                                <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest ${colors.bg} ${colors.text} border border-current/10`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${colors.bar}`} />
+                                                    {marker.status}
+                                                </div>
                                             </div>
-                                            <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest ${colors.bg} ${colors.text} border border-current/10`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${colors.bar}`} />
-                                                {finding.status}
+                                            <div className="flex items-end gap-3">
+                                                <span className="text-3xl font-black text-gray-900 tracking-tight">{marker.value}</span>
+                                                {marker.unit && (
+                                                    <span className="text-sm text-gray-400 font-bold mb-1.5 uppercase tracking-widest">{marker.unit}</span>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="flex items-end gap-3">
-                                            <span className="text-3xl font-black text-gray-900 tracking-tight">{finding.value}</span>
-                                            <span className="text-sm text-gray-400 font-bold mb-1.5 uppercase tracking-widest">{finding.unit}</span>
-                                            <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden ml-4 mb-2.5">
-                                                <div className={`h-full ${colors.bar} rounded-full transition-all duration-1000`} style={{ width: '65%' }} />
-                                            </div>
+                                    );
+                                })}
+                            </div>
+                        ) : analysis?.keyFindings && analysis.keyFindings.length > 0 ? (
+                            <div className="space-y-4">
+                                {analysis.keyFindings.map((finding, idx) => (
+                                    <div key={idx} className="p-5 rounded-2xl bg-gray-50/70 border border-gray-100 flex items-start gap-4">
+                                        <div className="w-8 h-8 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm shrink-0">
+                                            {idx + 1}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold text-gray-900">{finding}</p>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center">
+                                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-400">
+                                    <Info className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Analysis Unavailable</h3>
+                                <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">
+                                    No automated biomarkers or findings were generated for this report. Please consult with a doctor to review the original document.
+                                </p>
+                                <button
+                                    onClick={() => handleDownload()}
+                                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white rounded-xl font-bold text-sm hover:bg-primary-700 transition-all shadow-md"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Download Document
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -246,8 +409,14 @@ export default function ReportAnalysis() {
                         <div className={`w-20 h-20 rounded-3xl ${currentStatus.bg} flex items-center justify-center mx-auto mb-6 shadow-inner`}>
                             <StatusIcon className={`w-10 h-10 ${currentStatus.text}`} />
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Status: {report.status || 'Verified'}</h3>
-                        <p className="text-gray-500 font-medium leading-relaxed">Everything looks optimal in this analysis based on standard medical benchmarks.</p>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+                            Status: {hasValidAnalysis ? (report.status || 'Verified') : 'Pending Review'}
+                        </h3>
+                        <p className="text-gray-500 font-medium leading-relaxed">
+                            {hasValidAnalysis 
+                                ? 'Analysis generated from submitted medical documentation.' 
+                                : 'Awaiting clinical review or doctor evaluation.'}
+                        </p>
                     </div>
 
                     {/* Action Card */}
