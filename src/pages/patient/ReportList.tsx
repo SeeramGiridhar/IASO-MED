@@ -1,64 +1,71 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, Database, FileText, Calendar, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, Plus, Database, FileText, Calendar, ChevronRight, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { useDebounce } from '../../hooks/useDebounce';
+import { ReportCardSkeleton } from '../../components/common/Skeleton';
 import { clsx } from 'clsx';
+
+interface ReportItem {
+    id: string;
+    title: string;
+    category?: string | null;
+    status: string;
+    report_date: string;
+    file_url?: string;
+    notes?: string | null;
+}
+
+const reportTypes = ['All', 'Blood Test', 'X-Ray', 'MRI / CT Scan', 'Prescription', 'Lab Report', 'Other'];
 
 export default function ReportList() {
     const { user } = useAuth();
-    const [reports, setReports] = useState<any[]>([]);
+    const [reports, setReports] = useState<ReportItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
 
-    useEffect(() => {
-        if (!user) return;
-        fetchReports();
-    }, [user]);
+    // Debounce search input by 300ms
+    const debouncedSearch = useDebounce(searchQuery, 300);
 
-    const fetchReports = async () => {
+    const fetchReports = useCallback(async () => {
+        if (!user) return;
         setIsLoading(true);
         setError(null);
         try {
             const { data, error: fetchError } = await supabase
                 .from('reports')
-                .select('*')
-                .eq('patient_id', user?.id)
+                .select('id, title, category, status, report_date, file_url, notes')
+                .eq('patient_id', user.id)
                 .order('report_date', { ascending: false });
 
             if (fetchError) throw fetchError;
             setReports(data || []);
-        } catch (err: any) {
-            console.error('Error fetching reports:', err);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to load reports.';
+            console.error('Error fetching reports:', message);
             setError('Failed to load reports. Please try again.');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user]);
 
+    useEffect(() => {
+        fetchReports();
+    }, [fetchReports]);
+
+    const query = debouncedSearch.toLowerCase().trim();
     const filteredReports = reports.filter(report => {
-        const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            report.category.toLowerCase().includes(searchQuery.toLowerCase());
+        const title = report.title?.toLowerCase() || '';
+        const category = report.category?.toLowerCase() || '';
+        const matchesSearch = !query || title.includes(query) || category.includes(query);
         const matchesType = filterType === 'All' || report.category === filterType;
-        const matchesStatus = filterStatus === 'All' || report.status === filterStatus.toLowerCase();
+        const matchesStatus = filterStatus === 'All' || report.status?.toLowerCase() === filterStatus.toLowerCase();
         return matchesSearch && matchesType && matchesStatus;
     });
-
-    const reportTypes = ['All', 'Blood Test', 'X-Ray', 'MRI / CT Scan', 'Prescription', 'Lab Report', 'Other'];
-
-    if (isLoading) {
-        return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="w-10 h-10 text-primary-500 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">Loading your medical archive...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -78,7 +85,7 @@ export default function ReportList() {
 
             {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600">
-                    <AlertCircle className="w-5 h-5" />
+                    <AlertCircle className="w-5 h-5 shrink-0" />
                     <p className="font-medium">{error}</p>
                     <button onClick={fetchReports} className="ml-auto text-sm font-bold underline">Retry</button>
                 </div>
@@ -90,7 +97,7 @@ export default function ReportList() {
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search reports by name or hospital..."
+                        placeholder="Search reports by name or category... (debounced 300ms)"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary-500 focus:outline-none transition-colors"
@@ -101,13 +108,22 @@ export default function ReportList() {
                 </select>
                 <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-3 border-2 border-gray-100 rounded-xl text-gray-600 focus:border-primary-500 focus:outline-none transition-colors">
                     <option value="All">All Status</option>
-                    <option value="Analyzed">Analyzed</option>
-                    <option value="Pending">Pending</option>
+                    <option value="analyzed">Analyzed</option>
+                    <option value="pending">Pending</option>
+                    <option value="normal">Normal</option>
+                    <option value="warning">Warning</option>
+                    <option value="critical">Critical</option>
                 </select>
             </div>
 
-            {/* Report Grid / Empty State */}
-            {filteredReports.length === 0 ? (
+            {/* Skeletons or Grid */}
+            {isLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <ReportCardSkeleton />
+                    <ReportCardSkeleton />
+                    <ReportCardSkeleton />
+                </div>
+            ) : filteredReports.length === 0 ? (
                 <div className="py-24 text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
                     <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
                         <Database className="w-10 h-10 text-gray-300" />
@@ -141,13 +157,15 @@ export default function ReportList() {
                                 </div>
                                 <div className={clsx(
                                     "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                                    report.status === 'analyzed' ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"
+                                    report.status === 'analyzed' || report.status === 'normal' ? "bg-green-50 text-green-600" :
+                                    report.status === 'warning' ? "bg-amber-50 text-amber-600" :
+                                    report.status === 'critical' ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
                                 )}>
                                     {report.status}
                                 </div>
                             </div>
                             <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">{report.title}</h3>
-                            <p className="text-sm text-gray-500 mt-1">{report.category}</p>
+                            <p className="text-sm text-gray-500 mt-1">{report.category || 'General'}</p>
 
                             <div className="mt-6 flex items-center justify-between text-xs text-gray-400 font-medium">
                                 <div className="flex items-center gap-1.5">

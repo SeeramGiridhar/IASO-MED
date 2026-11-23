@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
     FileText,
@@ -11,31 +11,47 @@ import {
     ChevronRight,
     Loader2,
     Clock,
-    ArrowUpRight
+    ArrowUpRight,
+    Plus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
+interface RecentReport {
+    id: string;
+    title: string;
+    category?: string;
+    report_type?: string;
+    report_date: string;
+    status: string;
+}
+
+interface UpcomingAppointment {
+    id: string;
+    appointment_date: string;
+    reason?: string;
+    doctor?: {
+        id: string;
+        full_name?: string;
+        avatar_url?: string;
+    } | null;
+}
+
 export default function PatientDashboard() {
     const { user } = useAuth();
-    const [recentReports, setRecentReports] = useState<any[]>([]);
-    const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+    const [recentReports, setRecentReports] = useState<RecentReport[]>([]);
+    const [upcomingAppointments, setUpcomingAppointments] = useState<UpcomingAppointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) {
-            fetchDashboardData();
-        }
-    }, [user]);
-
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
+        if (!user) return;
         setIsLoading(true);
         try {
             // Fetch recent reports
             const { data: reportsData } = await supabase
                 .from('reports')
-                .select('*')
-                .eq('patient_id', user?.id)
+                .select('id, title, category, report_type, report_date, status')
+                .eq('patient_id', user.id)
                 .order('report_date', { ascending: false })
                 .limit(3);
 
@@ -43,31 +59,48 @@ export default function PatientDashboard() {
             const { data: apptData } = await supabase
                 .from('appointments')
                 .select(`
-                    *,
+                    id,
+                    appointment_date,
+                    reason,
                     doctor:doctor_id (
                         id,
-                        specialization,
-                        profiles:id (
-                            full_name,
-                            avatar_url
-                        )
+                        full_name,
+                        avatar_url
                     )
                 `)
-                .eq('patient_id', user?.id)
+                .eq('patient_id', user.id)
                 .gte('appointment_date', new Date().toISOString())
                 .order('appointment_date', { ascending: true })
                 .limit(3);
 
+            const formattedAppts: UpcomingAppointment[] = (apptData || []).map((appt) => {
+                const doctorProfile = Array.isArray(appt.doctor) ? appt.doctor[0] : appt.doctor;
+                return {
+                    id: appt.id,
+                    appointment_date: appt.appointment_date,
+                    reason: appt.reason,
+                    doctor: doctorProfile ? {
+                        id: doctorProfile.id,
+                        full_name: doctorProfile.full_name,
+                        avatar_url: doctorProfile.avatar_url,
+                    } : null
+                };
+            });
+
             setRecentReports(reportsData || []);
-            setUpcomingAppointments(apptData || []);
+            setUpcomingAppointments(formattedAppts);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user]);
 
-    const healthMetrics: any[] = [
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    const healthMetrics = [
         { label: 'Heart Rate', value: '72', unit: 'bpm', icon: Heart, trend: 'stable', color: 'text-red-500', bg: 'bg-red-50' },
         { label: 'Blood Pressure', value: '120/80', unit: 'mmHg', icon: Activity, trend: 'stable', color: 'text-blue-500', bg: 'bg-blue-50' },
         { label: 'Blood Sugar', value: '95', unit: 'mg/dL', icon: Droplets, trend: 'stable', color: 'text-amber-500', bg: 'bg-amber-50' },
@@ -103,7 +136,7 @@ export default function PatientDashboard() {
 
             {/* Health Metrics */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                {healthMetrics.map((metric: any) => (
+                {healthMetrics.map((metric) => (
                     <div key={metric.label} className="bg-white rounded-[2rem] border-2 border-gray-50 p-6 hover:shadow-2xl hover:shadow-gray-100/50 transition-all duration-300 transform hover:-translate-y-1">
                         <div className="flex items-center justify-between mb-4">
                             <div className={`w-12 h-12 rounded-2xl ${metric.bg} flex items-center justify-center shadow-inner`}>
@@ -156,7 +189,7 @@ export default function PatientDashboard() {
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">{report.title}</h3>
                                         <div className="flex items-center gap-3 text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">
-                                            <span>{report.report_type}</span>
+                                            <span>{report.report_type || report.category || 'Report'}</span>
                                             <span className="text-gray-200">•</span>
                                             <span>{new Date(report.report_date).toLocaleDateString()}</span>
                                         </div>
@@ -198,8 +231,8 @@ export default function PatientDashboard() {
                                             <div className="flex-1 w-0.5 bg-gray-100 group-last:hidden mt-2" />
                                         </div>
                                         <div className="flex-1 pb-6 group-last:pb-0">
-                                            <h4 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{appt.doctor.profiles.full_name}</h4>
-                                            <p className="text-xs text-primary-600 font-bold uppercase mb-2">{appt.doctor.specialization}</p>
+                                            <h4 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{appt.doctor?.full_name || 'Dr. Specialist'}</h4>
+                                            <p className="text-xs text-primary-600 font-bold uppercase mb-2">Consultation</p>
                                             <div className="flex items-center gap-3 text-xs text-gray-400 font-bold">
                                                 <span className="flex items-center gap-1">
                                                     <Clock className="w-3.5 h-3.5" />
@@ -237,14 +270,5 @@ export default function PatientDashboard() {
                 </div>
             </div>
         </div>
-    );
-}
-
-function Plus(props: any) {
-    return (
-        <svg {...props} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
     );
 }

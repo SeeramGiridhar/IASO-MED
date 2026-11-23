@@ -79,8 +79,9 @@ export default function ReportUpload() {
                 reportStatus = analysis.severity;
 
                 setAnalysisProgress('Analysis complete!');
-            } catch (aiError: any) {
-                console.warn('AI analysis failed, continuing without it:', aiError);
+            } catch (aiError: unknown) {
+                const msg = aiError instanceof Error ? aiError.message : String(aiError);
+                console.warn('AI analysis failed, continuing without it:', msg);
                 aiSummary = 'AI analysis unavailable. Please review the uploaded report manually or consult with a doctor.';
             }
 
@@ -96,6 +97,7 @@ export default function ReportUpload() {
                 hospital_clinic: hospitalName,
                 file_url: uploadedPaths[0],
                 notes: aiSummary,
+                ai_summary: aiSummary,
                 status: reportStatus
             });
 
@@ -103,9 +105,10 @@ export default function ReportUpload() {
 
             setUploadSuccess(true);
             setTimeout(() => navigate('/patient/reports'), 2000);
-        } catch (err: any) {
-            console.error('Upload error:', err);
-            setError(err.message || 'An error occurred during upload. Please ensure you have configured Supabase Storage.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'An error occurred during upload.';
+            console.error('Upload error:', message);
+            setError(message || 'An error occurred during upload. Please ensure you have configured Supabase Storage.');
         } finally {
             setIsUploading(false);
             setIsAnalyzing(false);
@@ -149,7 +152,10 @@ export default function ReportUpload() {
 
                 {/* Upload Area */}
                 <div
-                    onDragOver={(e) => { e.preventDefault(); !isUploading && setDragOver(true); }}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        if (!isUploading) setDragOver(true);
+                    }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={handleDrop}
                     className={`relative border-2 border-dashed rounded-2xl p-10 text-center transition-all ${dragOver ? 'border-primary-400 bg-primary-50' : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'

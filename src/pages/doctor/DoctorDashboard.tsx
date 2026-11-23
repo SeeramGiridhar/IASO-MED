@@ -1,13 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Users, FileText, Star, TrendingUp, ChevronRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
+interface TodayAppointment {
+    id: string;
+    appointment_date: string;
+    reason?: string;
+    patient?: {
+        id: string;
+        full_name?: string;
+        avatar_url?: string;
+    } | null;
+}
+
+interface PendingReport {
+    id: string;
+    title: string;
+    status: string;
+    patient?: {
+        id: string;
+        full_name?: string;
+    } | null;
+}
+
 export default function DoctorDashboard() {
     const { user } = useAuth();
-    const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
-    const [pendingReports, setPendingReports] = useState<any[]>([]);
+    const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([]);
+    const [pendingReports, setPendingReports] = useState<PendingReport[]>([]);
     const [stats, setStats] = useState({
         todayAppts: 0,
         pendingReviews: 0,
@@ -16,13 +37,8 @@ export default function DoctorDashboard() {
     });
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) {
-            fetchDoctorData();
-        }
-    }, [user]);
-
-    const fetchDoctorData = async () => {
+    const fetchDoctorData = useCallback(async () => {
+        if (!user) return;
         setIsLoading(true);
         try {
             const todayStart = new Date();
@@ -34,14 +50,16 @@ export default function DoctorDashboard() {
             const { data: apptData } = await supabase
                 .from('appointments')
                 .select(`
-                    *,
+                    id,
+                    appointment_date,
+                    reason,
                     patient:patient_id (
                         id,
                         full_name,
                         avatar_url
                     )
                 `)
-                .eq('doctor_id', user?.id)
+                .eq('doctor_id', user.id)
                 .gte('appointment_date', todayStart.toISOString())
                 .lte('appointment_date', todayEnd.toISOString())
                 .order('appointment_date', { ascending: true });
@@ -50,13 +68,15 @@ export default function DoctorDashboard() {
             const { data: reportsData } = await supabase
                 .from('reports')
                 .select(`
-                    *,
+                    id,
+                    title,
+                    status,
                     patient:patient_id (
                         id,
                         full_name
                     )
                 `)
-                .eq('doctor_id', user?.id)
+                .eq('doctor_id', user.id)
                 .eq('status', 'pending')
                 .limit(5);
 
@@ -64,13 +84,40 @@ export default function DoctorDashboard() {
             const { count: patientCount } = await supabase
                 .from('appointments')
                 .select('patient_id', { count: 'exact', head: true })
-                .eq('doctor_id', user?.id);
+                .eq('doctor_id', user.id);
 
-            setTodayAppointments(apptData || []);
-            setPendingReports(reportsData || []);
+            const formattedAppts: TodayAppointment[] = (apptData || []).map((a) => {
+                const patient = Array.isArray(a.patient) ? a.patient[0] : a.patient;
+                return {
+                    id: a.id,
+                    appointment_date: a.appointment_date,
+                    reason: a.reason,
+                    patient: patient ? {
+                        id: patient.id,
+                        full_name: patient.full_name,
+                        avatar_url: patient.avatar_url
+                    } : null
+                };
+            });
+
+            const formattedReports: PendingReport[] = (reportsData || []).map((r) => {
+                const patient = Array.isArray(r.patient) ? r.patient[0] : r.patient;
+                return {
+                    id: r.id,
+                    title: r.title,
+                    status: r.status,
+                    patient: patient ? {
+                        id: patient.id,
+                        full_name: patient.full_name
+                    } : null
+                };
+            });
+
+            setTodayAppointments(formattedAppts);
+            setPendingReports(formattedReports);
             setStats({
-                todayAppts: apptData?.length || 0,
-                pendingReviews: reportsData?.length || 0,
+                todayAppts: formattedAppts.length,
+                pendingReviews: formattedReports.length,
                 totalPatients: patientCount || 0,
                 rating: '4.9'
             });
@@ -79,7 +126,11 @@ export default function DoctorDashboard() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        fetchDoctorData();
+    }, [fetchDoctorData]);
 
     const statsConfig = [
         { label: "Today's Appts", value: stats.todayAppts.toString(), icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -98,15 +149,13 @@ export default function DoctorDashboard() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-outfit">
-            {/* Welcome Header */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
                 <div>
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
-                        Welcome back, <span className="text-primary-600">
-                            {user?.name?.toLowerCase().startsWith('dr.') ? user.name : `Dr. ${user?.name?.split(' ').pop()}`}
-                        </span> 👋
+                        Dr. <span className="text-primary-600">{user?.name?.split(' ').pop() || 'Doctor'}</span> 👋
                     </h1>
-                    <p className="text-gray-500 mt-1 font-medium">You have {stats.todayAppts} appointments scheduled for today.</p>
+                    <p className="text-gray-500 mt-1 font-medium">Here is an overview of your clinical consultations and reports.</p>
                 </div>
                 <Link
                     to="/doctor/profile"
@@ -119,7 +168,7 @@ export default function DoctorDashboard() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                {statsConfig.map((stat: any) => (
+                {statsConfig.map((stat) => (
                     <div key={stat.label} className="bg-white rounded-[2rem] border-2 border-gray-50 p-6 hover:shadow-2xl hover:shadow-gray-100/50 transition-all duration-300 transform hover:-translate-y-1">
                         <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center mb-4 shadow-inner`}>
                             <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -157,14 +206,14 @@ export default function DoctorDashboard() {
                                         <span className="text-xs font-bold text-primary-600">{new Date(appt.appointment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">{appt.patient?.full_name}</h3>
+                                        <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">{appt.patient?.full_name || 'Patient'}</h3>
                                         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Reason: {appt.reason || 'General Consultation'}</p>
                                     </div>
                                     <Link
-                                        to={`/doctor/patients/${appt.patient?.id}`}
+                                        to={`/patient/reports`}
                                         className="px-6 py-2.5 rounded-xl bg-primary-50 text-primary-600 text-xs font-bold uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all shadow-sm"
                                     >
-                                        Start
+                                        Review
                                     </Link>
                                 </div>
                             ))
@@ -191,12 +240,12 @@ export default function DoctorDashboard() {
                                 </div>
                             ) : (
                                 pendingReports.map((report) => (
-                                    <Link key={report.id} to={`/doctor/reports/${report.id}`} className="flex gap-4 group">
+                                    <Link key={report.id} to={`/patient/reports/${report.id}`} className="flex gap-4 group">
                                         <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600 shrink-0 group-hover:scale-110 transition-transform">
                                             <FileText className="w-6 h-6" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-gray-900 text-sm group-hover:text-primary-600 transition-colors truncate">{report.patient?.full_name}</h4>
+                                            <h4 className="font-bold text-gray-900 text-sm group-hover:text-primary-600 transition-colors truncate">{report.patient?.full_name || 'Patient'}</h4>
                                             <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{report.title}</p>
                                             <div className="flex items-center gap-2 mt-2">
                                                 <div className="h-1 flex-1 bg-gray-100 rounded-full overflow-hidden">
@@ -223,16 +272,19 @@ export default function DoctorDashboard() {
                             </div>
                             <div className="space-y-4 mb-8">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-primary-100 font-medium">New Patients (MTD)</span>
+                                    <span className="text-primary-100 font-medium">Total Consultations</span>
                                     <span className="font-black text-lg">+{stats.totalPatients}</span>
                                 </div>
                                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                                     <div className="h-full bg-white/40 w-2/3" />
                                 </div>
                             </div>
-                            <button className="w-full py-4 bg-white text-primary-700 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-primary-50 transition-all shadow-xl shadow-black/20 text-sm">
-                                View Detailed Analytics
-                            </button>
+                            <Link
+                                to="/doctor/schedule"
+                                className="w-full py-4 bg-white text-primary-700 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-primary-50 transition-all shadow-xl shadow-black/20 text-sm"
+                            >
+                                View Detailed Schedule
+                            </Link>
                         </div>
                     </div>
                 </div>

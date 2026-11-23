@@ -35,8 +35,9 @@ export default function LoginPage() {
 
             const role = data.user?.user_metadata?.role;
             navigate(role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard');
-        } catch (err: any) {
-            setError(err.message || 'Invalid email or password');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Invalid email or password';
+            setError(message || 'Invalid email or password');
         } finally {
             setIsLoading(false);
         }

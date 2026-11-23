@@ -1,50 +1,80 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar as CalendarIcon, Clock, User, ChevronLeft, ChevronRight, MoreVertical, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { clsx } from 'clsx';
 
+interface ScheduleAppointment {
+    id: string;
+    appointment_date: string;
+    reason?: string;
+    status: string;
+    patient?: {
+        id: string;
+        full_name?: string;
+        avatar_url?: string;
+    } | null;
+}
+
 export default function DoctorSchedule() {
     const { user } = useAuth();
-    const [appointments, setAppointments] = useState<any[]>([]);
+    const [appointments, setAppointments] = useState<ScheduleAppointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    useEffect(() => {
-        if (user) {
-            fetchSchedule();
-        }
-    }, [user, currentDate]);
-
-    const fetchSchedule = async () => {
+    const fetchSchedule = useCallback(async () => {
+        if (!user) return;
         setIsLoading(true);
         try {
             const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-            const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
 
             const { data, error } = await supabase
                 .from('appointments')
                 .select(`
-                    *,
+                    id,
+                    appointment_date,
+                    reason,
+                    status,
                     patient:patient_id (
                         id,
                         full_name,
                         avatar_url
                     )
                 `)
-                .eq('doctor_id', user?.id)
+                .eq('doctor_id', user.id)
                 .gte('appointment_date', startOfMonth.toISOString())
                 .lte('appointment_date', endOfMonth.toISOString())
                 .order('appointment_date', { ascending: true });
 
             if (error) throw error;
-            setAppointments(data || []);
+
+            const formatted: ScheduleAppointment[] = (data || []).map((appt) => {
+                const patient = Array.isArray(appt.patient) ? appt.patient[0] : appt.patient;
+                return {
+                    id: appt.id,
+                    appointment_date: appt.appointment_date,
+                    reason: appt.reason,
+                    status: appt.status,
+                    patient: patient ? {
+                        id: patient.id,
+                        full_name: patient.full_name,
+                        avatar_url: patient.avatar_url
+                    } : null
+                };
+            });
+
+            setAppointments(formatted);
         } catch (error) {
             console.error('Error fetching schedule:', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user, currentDate]);
+
+    useEffect(() => {
+        fetchSchedule();
+    }, [fetchSchedule]);
 
     const nextMonth = () => {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -82,7 +112,7 @@ export default function DoctorSchedule() {
             </div>
 
             <div className="grid lg:grid-cols-12 gap-10">
-                {/* Calendar View Placeholder / Summary */}
+                {/* Timeline */}
                 <div className="lg:col-span-8 space-y-6">
                     <div className="bg-white rounded-[2.5rem] border-2 border-gray-50 p-8 shadow-xl shadow-gray-100/50">
                         <div className="flex items-center justify-between mb-8">
@@ -111,7 +141,6 @@ export default function DoctorSchedule() {
                             </div>
                         ) : (
                             <div className="space-y-8">
-                                {/* Group appointments by day could be better, but for now linear */}
                                 {appointments.map((appt) => {
                                     const date = new Date(appt.appointment_date);
                                     return (
@@ -126,7 +155,7 @@ export default function DoctorSchedule() {
                                                         <User className="w-6 h-6 text-gray-400" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h4 className="font-bold text-gray-900 truncate tracking-tight">{appt.patient?.full_name}</h4>
+                                                        <h4 className="font-bold text-gray-900 truncate tracking-tight">{appt.patient?.full_name || 'Patient'}</h4>
                                                         <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
                                                             <span className="flex items-center gap-1">
                                                                 <CalendarIcon className="w-3 h-3 text-primary-500" />

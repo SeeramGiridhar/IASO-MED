@@ -1,8 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, CheckCircle2, AlertCircle, Info, Loader2, Stethoscope, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+
+interface DoctorDetail {
+    id: string;
+    name: string;
+    avatar: string;
+    specialization: string;
+    rating: number;
+    hospital: string;
+    fee: number;
+    experience: number;
+}
 
 const timeSlots = [
     '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
@@ -13,7 +24,7 @@ export default function AppointmentBooking() {
     const { doctorId } = useParams();
     const { user } = useAuth();
 
-    const [doctor, setDoctor] = useState<any>(null);
+    const [doctor, setDoctor] = useState<DoctorDetail | null>(null);
     const [isLoadingDoctor, setIsLoadingDoctor] = useState(true);
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
@@ -23,19 +34,19 @@ export default function AppointmentBooking() {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (doctorId) {
-            fetchDoctorDetails();
-        }
-    }, [doctorId]);
-
-    const fetchDoctorDetails = async () => {
+    const fetchDoctorDetails = useCallback(async () => {
+        if (!doctorId) return;
         setIsLoadingDoctor(true);
         try {
-            const { data, error } = await supabase
+            const { data, error: fetchErr } = await supabase
                 .from('doctors')
                 .select(`
-                    *,
+                    id,
+                    specialization,
+                    rating,
+                    hospital_clinic,
+                    consultation_fee,
+                    experience_years,
                     profiles:id (
                         full_name,
                         avatar_url
@@ -44,24 +55,30 @@ export default function AppointmentBooking() {
                 .eq('id', doctorId)
                 .single();
 
-            if (error) throw error;
+            if (fetchErr) throw fetchErr;
+            const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
             setDoctor({
                 id: data.id,
-                name: data.profiles.full_name,
-                avatar: data.profiles.avatar_url,
-                specialization: data.specialization,
-                rating: data.rating,
-                hospital: data.hospital_clinic,
-                fee: data.consultation_fee,
-                experience: data.experience_years
+                name: profile?.full_name || 'Dr. Specialist',
+                avatar: profile?.avatar_url || '',
+                specialization: data.specialization || 'General Practice',
+                rating: data.rating || 4.9,
+                hospital: data.hospital_clinic || 'IASO Clinic',
+                fee: data.consultation_fee || 100,
+                experience: data.experience_years || 5
             });
-        } catch (err: any) {
-            console.error('Error fetching doctor:', err);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Could not load doctor details.';
+            console.error('Error fetching doctor:', msg);
             setError('Could not load doctor details.');
         } finally {
             setIsLoadingDoctor(false);
         }
-    };
+    }, [doctorId]);
+
+    useEffect(() => {
+        fetchDoctorDetails();
+    }, [fetchDoctorDetails]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,9 +122,10 @@ export default function AppointmentBooking() {
             if (bookingError) throw bookingError;
 
             setIsConfirmed(true);
-        } catch (err: any) {
-            console.error('Booking error:', err);
-            setError(err.message || 'Failed to book appointment. Please try again.');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Failed to book appointment.';
+            console.error('Booking error:', msg);
+            setError(msg || 'Failed to book appointment. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -115,10 +133,11 @@ export default function AppointmentBooking() {
 
     const convertTo24Hour = (timeStr: string) => {
         const [time, modifier] = timeStr.split(' ');
-        let [hours, minutes] = time.split(':');
-        if (hours === '12') hours = '00';
-        if (modifier === 'PM') hours = (parseInt(hours, 10) + 12).toString();
-        return `${hours}:${minutes}:00`;
+        let [hours] = time.split(':');
+        const [, minutes] = time.split(':');
+        if (hours === '12' && modifier === 'AM') hours = '00';
+        if (modifier === 'PM' && hours !== '12') hours = (parseInt(hours, 10) + 12).toString().padStart(2, '0');
+        return `${hours.padStart(2, '0')}:${minutes}:00`;
     };
 
     if (isLoadingDoctor) {

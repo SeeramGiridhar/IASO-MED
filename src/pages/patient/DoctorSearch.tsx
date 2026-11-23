@@ -1,31 +1,49 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Stethoscope, Star, Loader2, Award, AlertCircle } from 'lucide-react';
+import { Search, Stethoscope, Star, Award, AlertCircle, User as UserIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useDebounce } from '../../hooks/useDebounce';
+import { DoctorCardSkeleton } from '../../components/common/Skeleton';
+
+interface DoctorItem {
+    id: string;
+    name: string;
+    avatar: string;
+    specialization: string;
+    experience: number;
+    hospital: string;
+    fee: number;
+    rating: number;
+    isVerified: boolean;
+}
 
 const specializations = ['All', 'General Medicine', 'Cardiology', 'Dermatology', 'Neurology', 'Orthopedics', 'Pediatrics', 'Psychiatry', 'Gynecology', 'Ophthalmology', 'Oncology', 'Urology', 'Endocrinology'];
 
 export default function DoctorSearch() {
-    const [doctors, setDoctors] = useState<any[]>([]);
+    const [doctors, setDoctors] = useState<DoctorItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSpec, setSelectedSpec] = useState('All');
-    const [sortBy, setSortBy] = useState('rating');
+    const [sortBy, setSortBy] = useState<'rating' | 'fee' | 'experience'>('rating');
 
-    useEffect(() => {
-        fetchDoctors();
-    }, []);
+    // Debounce the search input by 300ms
+    const debouncedSearch = useDebounce(searchQuery, 300);
 
     const fetchDoctors = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            // Join doctors with profiles to get name and avatar
             const { data, error: fetchError } = await supabase
                 .from('doctors')
                 .select(`
-                    *,
+                    id,
+                    specialization,
+                    experience_years,
+                    hospital_clinic,
+                    consultation_fee,
+                    rating,
+                    is_verified,
                     profiles:id (
                         full_name,
                         avatar_url,
@@ -35,32 +53,42 @@ export default function DoctorSearch() {
 
             if (fetchError) throw fetchError;
 
-            // Format data for easier use
-            const formatted = (data || []).map((d: any) => ({
-                id: d.id,
-                name: d.profiles.full_name,
-                avatar: d.profiles.avatar_url,
-                specialization: d.specialization || 'General Medicine',
-                experience: d.experience_years || 0,
-                hospital: d.hospital_clinic || 'Private Practice',
-                fee: d.consultation_fee || 0,
-                rating: d.rating || 0,
-                isVerified: d.is_verified,
-            }));
+            const formatted: DoctorItem[] = (data || []).map((d) => {
+                const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
+                return {
+                    id: d.id,
+                    name: profile?.full_name || 'Dr. Specialist',
+                    avatar: profile?.avatar_url || '',
+                    specialization: d.specialization || 'General Medicine',
+                    experience: d.experience_years || 0,
+                    hospital: d.hospital_clinic || 'IASO Clinic',
+                    fee: d.consultation_fee || 0,
+                    rating: d.rating || 0,
+                    isVerified: Boolean(d.is_verified),
+                };
+            });
 
             setDoctors(formatted);
-        } catch (err: any) {
-            console.error('Error fetching doctors:', err);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to find doctors.';
+            console.error('Error fetching doctors:', message);
             setError('Failed to find doctors. Please try again later.');
         } finally {
             setIsLoading(false);
         }
     };
 
+    useEffect(() => {
+        fetchDoctors();
+    }, []);
+
+    const query = debouncedSearch.toLowerCase().trim();
     const filtered = doctors
         .filter(d => {
-            const matchesSearch = d.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                d.specialization?.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesSearch = !query ||
+                d.name.toLowerCase().includes(query) ||
+                d.specialization.toLowerCase().includes(query) ||
+                d.hospital.toLowerCase().includes(query);
             const matchesSpec = selectedSpec === 'All' || d.specialization === selectedSpec;
             return matchesSearch && matchesSpec;
         })
@@ -71,17 +99,6 @@ export default function DoctorSearch() {
             return 0;
         });
 
-    if (isLoading) {
-        return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="w-10 h-10 text-primary-500 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">Finding verified doctors...</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8 font-outfit">
@@ -91,7 +108,7 @@ export default function DoctorSearch() {
 
             {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 font-medium font-open-sans">
-                    <AlertCircle className="w-5 h-5" />
+                    <AlertCircle className="w-5 h-5 shrink-0" />
                     <p>{error}</p>
                     <button onClick={fetchDoctors} className="ml-auto text-sm font-bold underline">Retry</button>
                 </div>
@@ -103,14 +120,18 @@ export default function DoctorSearch() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search name or specialization..."
+                        placeholder="Search name or specialization... (debounced 300ms)"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none transition-all shadow-sm shadow-gray-100/50"
                     />
                 </div>
                 <div className="flex gap-2">
-                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-4 py-3.5 bg-white border-2 border-gray-100 rounded-2xl text-gray-700 font-semibold focus:border-primary-500 focus:outline-none cursor-pointer transition-all shadow-sm shadow-gray-100/50">
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as 'rating' | 'fee' | 'experience')}
+                        className="px-4 py-3.5 bg-white border-2 border-gray-100 rounded-2xl text-gray-700 font-semibold focus:border-primary-500 focus:outline-none cursor-pointer transition-all shadow-sm shadow-gray-100/50"
+                    >
                         <option value="rating">Top Rated</option>
                         <option value="fee">Lowest Fee</option>
                         <option value="experience">Experience</option>
@@ -134,8 +155,14 @@ export default function DoctorSearch() {
                 ))}
             </div>
 
-            {/* Doctor Cards */}
-            {filtered.length > 0 ? (
+            {/* Doctor Cards / Skeletons */}
+            {isLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+                    <DoctorCardSkeleton />
+                    <DoctorCardSkeleton />
+                    <DoctorCardSkeleton />
+                </div>
+            ) : filtered.length > 0 ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                     {filtered.map((doctor) => (
                         <div key={doctor.id} className="group bg-white rounded-3xl border border-gray-100 p-6 hover:border-primary-100 hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-300">
@@ -146,7 +173,7 @@ export default function DoctorSearch() {
                                             <img src={doctor.avatar} alt={doctor.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
-                                                <User className="w-8 h-8 text-primary-200" />
+                                                <UserIcon className="w-8 h-8 text-primary-300" />
                                             </div>
                                         )}
                                     </div>
@@ -208,8 +235,4 @@ export default function DoctorSearch() {
             )}
         </div>
     );
-}
-
-function User(props: any) {
-    return <Stethoscope {...props} />; // Placeholder icon if User is not imported
 }

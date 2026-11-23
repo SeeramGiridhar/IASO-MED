@@ -1,51 +1,88 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FileText, Search, Filter, ChevronRight, Loader2, Calendar, User } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Link } from 'react-router-dom';
+
+interface ReviewReport {
+    id: string;
+    title: string;
+    report_type?: string;
+    report_date: string;
+    status: string;
+    patient?: {
+        id: string;
+        full_name?: string;
+        avatar_url?: string;
+    } | null;
+}
 
 export default function DoctorReportsReview() {
     const { user } = useAuth();
-    const [reports, setReports] = useState<any[]>([]);
+    const [reports, setReports] = useState<ReviewReport[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        if (user) {
-            fetchReports();
-        }
-    }, [user]);
+    const debouncedSearch = useDebounce(searchQuery, 300);
 
-    const fetchReports = async () => {
+    const fetchReports = useCallback(async () => {
+        if (!user) return;
         setIsLoading(true);
         try {
             const { data, error } = await supabase
                 .from('reports')
                 .select(`
-                    *,
+                    id,
+                    title,
+                    report_type,
+                    report_date,
+                    status,
                     patient:patient_id (
                         id,
-                        profiles:id (
-                            full_name
-                        )
+                        full_name,
+                        avatar_url
                     )
                 `)
-                .eq('doctor_id', user?.id)
+                .eq('doctor_id', user.id)
                 .order('report_date', { ascending: false });
 
             if (error) throw error;
-            setReports(data || []);
+
+            const formatted: ReviewReport[] = (data || []).map((r) => {
+                const patientData = Array.isArray(r.patient) ? r.patient[0] : r.patient;
+                return {
+                    id: r.id,
+                    title: r.title,
+                    report_type: r.report_type || 'General Report',
+                    report_date: r.report_date,
+                    status: r.status,
+                    patient: patientData ? {
+                        id: patientData.id,
+                        full_name: patientData.full_name,
+                        avatar_url: patientData.avatar_url
+                    } : null
+                };
+            });
+
+            setReports(formatted);
         } catch (error) {
             console.error('Error fetching reports:', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user]);
 
-    const filteredReports = reports.filter(report =>
-        report.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.patient?.profiles?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    useEffect(() => {
+        fetchReports();
+    }, [fetchReports]);
+
+    const query = debouncedSearch.toLowerCase().trim();
+    const filteredReports = reports.filter(report => {
+        const matchesTitle = report.title?.toLowerCase().includes(query);
+        const matchesPatient = report.patient?.full_name?.toLowerCase().includes(query);
+        return !query || matchesTitle || matchesPatient;
+    });
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-outfit">
@@ -62,7 +99,7 @@ export default function DoctorReportsReview() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search by report title or patient name..."
+                        placeholder="Search by report title or patient name... (debounced 300ms)"
                         className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-50 focus:border-primary-500 focus:ring-0 transition-all text-sm font-medium"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -110,7 +147,7 @@ export default function DoctorReportsReview() {
                                 <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
                                     <div className="flex items-center gap-1.5">
                                         <User className="w-3.5 h-3.5" />
-                                        {report.patient.profiles.full_name}
+                                        {report.patient?.full_name || 'Patient'}
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Calendar className="w-3.5 h-3.5" />
@@ -121,13 +158,13 @@ export default function DoctorReportsReview() {
 
                             <div className="flex items-center gap-3 md:ml-auto">
                                 <div className={`px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${report.status === 'pending'
-                                        ? 'bg-amber-50 text-amber-600 border-amber-100'
-                                        : 'bg-green-50 text-green-600 border-green-100'
+                                    ? 'bg-amber-50 text-amber-600 border-amber-100'
+                                    : 'bg-green-50 text-green-600 border-green-100'
                                     }`}>
                                     {report.status}
                                 </div>
                                 <Link
-                                    to={`/doctor/reports/${report.id}`}
+                                    to={`/patient/reports/${report.id}`}
                                     className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 group-hover:bg-primary-600 group-hover:text-white transition-all"
                                 >
                                     <ChevronRight className="w-5 h-5" />

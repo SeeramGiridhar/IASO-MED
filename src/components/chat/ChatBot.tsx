@@ -34,11 +34,12 @@ export default function ChatBot() {
     }, [messages, isOpen, isMinimized]);
 
     useEffect(() => {
-        const handleOpenChat = (e: any) => {
+        const handleOpenChat = (e: Event) => {
+            const customEvent = e as CustomEvent<{ message?: string }>;
             setIsOpen(true);
             setIsMinimized(false);
-            if (e.detail?.message) {
-                setInput(e.detail.message);
+            if (customEvent.detail?.message) {
+                setInput(customEvent.detail.message);
             }
         };
 
@@ -47,18 +48,18 @@ export default function ChatBot() {
     }, []);
 
     const getDemoResponse = (userInput: string): string => {
-        const input = userInput.toLowerCase();
+        const query = userInput.toLowerCase();
 
-        if (input.includes('blood') || input.includes('test') || input.includes('lab')) {
-            return "I can help you understand blood test results! In a real scenario, I would analyze your specific values and explain what they mean. Common blood tests include CBC (Complete Blood Count), cholesterol panels, and glucose levels. For personalized insights, please add OpenAI credits to enable AI analysis or consult with a doctor.";
-        } else if (input.includes('report') || input.includes('analysis')) {
-            return "I can analyze medical reports and provide patient-friendly explanations. Upload your report through the 'Upload Report' section, and once OpenAI credits are added, I'll provide detailed AI-powered insights. For now, you can view your uploaded reports in the Reports section.";
-        } else if (input.includes('appointment') || input.includes('doctor')) {
-            return "You can book appointments with doctors through our platform! Go to the 'Find Doctors' section to search for specialists based on your needs. I'd provide personalized doctor recommendations with full AI capabilities enabled.";
-        } else if (input.includes('help') || input.includes('how')) {
-            return "I'm IASO AI, your medical assistant! I can help you:\n• Understand medical reports\n• Explain blood test results\n• Find the right doctors\n• Book appointments\n• Answer health questions\n\nNote: Full AI analysis requires OpenAI credits. Please add credits at platform.openai.com or ask your questions and I'll provide helpful guidance!";
+        if (query.includes('blood') || query.includes('test') || query.includes('lab')) {
+            return "I can help you understand blood test results! Common blood tests include CBC (Complete Blood Count), lipid panels, and glucose levels. For personalized live AI insights, configure your Gemini API key in your .env file or consult with a doctor.";
+        } else if (query.includes('report') || query.includes('analysis')) {
+            return "I can analyze medical reports and provide patient-friendly explanations. Upload your report through the 'Upload Report' section. Configure your Gemini API key for instant AI analysis, or consult one of our verified specialists.";
+        } else if (query.includes('appointment') || query.includes('doctor')) {
+            return "You can book appointments with verified doctors through our platform! Go to the 'Find Doctors' section to search for specialists based on your needs.";
+        } else if (query.includes('help') || query.includes('how')) {
+            return "I'm IASO AI, your medical assistant! I can help you:\n• Understand medical reports\n• Explain blood test results\n• Find the right doctors\n• Book appointments\n• Answer health questions\n\nAsk me any question and I'll do my best to assist!";
         } else {
-            return "Thank you for your question! I'm currently in demo mode as the OpenAI API quota has been exceeded. To enable full AI-powered responses, please add credits to your OpenAI account. In the meantime, I can still help you navigate the IASO Med platform, upload reports, and book appointments with doctors. How else can I assist you?";
+            return "Thank you for your question! I can help you navigate the IASO Med platform, explain symptoms, understand reports, and book appointments with doctors. How can I assist you right now?";
         }
     };
 
@@ -76,7 +77,6 @@ export default function ChatBot() {
         setIsLoading(true);
 
         try {
-            // Check for OpenAI        try {
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
             if (!apiKey) {
@@ -89,7 +89,7 @@ export default function ChatBot() {
                     };
                     setMessages(prev => [...prev, mockResponse]);
                     setIsLoading(false);
-                }, 1000);
+                }, 800);
                 return;
             }
 
@@ -104,7 +104,7 @@ ${conversationHistory}
 User: ${userMessage.content}
 Model:`;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -132,14 +132,12 @@ Model:`;
             } else {
                 throw new Error('Invalid response from AI');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Chat error:', error);
 
-            // Provide helpful error message
             let errorContent = "I'm sorry, I encountered an error. Please try again later.";
-
-            if (error?.message?.includes('API key')) {
-                errorContent = "⚠️ API key issue detected. Please check your Gemini API configuration.";
+            if (error instanceof Error && error.message.includes('API key')) {
+                errorContent = "⚠️ API key issue detected. Please check your Gemini API configuration in .env.";
             }
 
             const errorMessage: Message = {
@@ -179,23 +177,23 @@ Model:`;
                                     <Bot className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm">IASO AI Assistant</h3>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                                        <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">Online</span>
+                                    <h3 className="font-bold text-sm leading-tight">IASO AI Assistant</h3>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                        <span className="text-[10px] text-primary-100 font-semibold uppercase tracking-wider">Online</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
                                 <button
                                     onClick={() => setIsMinimized(!isMinimized)}
-                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
                                 >
                                     {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
                                 </button>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -204,75 +202,77 @@ Model:`;
 
                         {!isMinimized && (
                             <>
-                                {/* Messages */}
-                                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50">
-                                    {messages.map((m, i) => (
+                                {/* Messages Container */}
+                                <div className="flex-1 p-4 overflow-y-auto space-y-4 no-scrollbar">
+                                    {messages.map((message, index) => (
                                         <div
-                                            key={i}
+                                            key={index}
                                             className={clsx(
-                                                "flex group",
-                                                m.role === 'user' ? "justify-end" : "justify-start"
+                                                "flex gap-3 max-w-[85%]",
+                                                message.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                                             )}
                                         >
                                             <div className={clsx(
-                                                "max-w-[85%] flex gap-3",
-                                                m.role === 'user' && "flex-row-reverse"
+                                                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white text-xs",
+                                                message.role === 'user' ? "bg-primary-600" : "bg-gray-100 text-gray-600"
                                             )}>
+                                                {message.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-primary-600" />}
+                                            </div>
+                                            <div className={clsx(
+                                                "p-3.5 rounded-2xl text-sm leading-relaxed",
+                                                message.role === 'user'
+                                                    ? "bg-primary-600 text-white rounded-tr-none shadow-sm"
+                                                    : "bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100 whitespace-pre-line"
+                                            )}>
+                                                {message.content}
                                                 <div className={clsx(
-                                                    "w-8 h-8 rounded-xl shrink-0 flex items-center justify-center shadow-sm",
-                                                    m.role === 'user' ? "bg-primary-100 text-primary-600" : "bg-white text-gray-400 border border-gray-100"
+                                                    "text-[9px] mt-1 text-right",
+                                                    message.role === 'user' ? "text-primary-200" : "text-gray-400"
                                                 )}>
-                                                    {m.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                                                </div>
-                                                <div className={clsx(
-                                                    "p-4 rounded-2xl text-sm leading-relaxed",
-                                                    m.role === 'user'
-                                                        ? "bg-primary-600 text-white rounded-tr-none shadow-lg shadow-primary-500/20"
-                                                        : "bg-white text-gray-700 border border-gray-100 rounded-tl-none shadow-sm"
-                                                )}>
-                                                    {m.content}
-                                                    <div className={clsx(
-                                                        "text-[10px] mt-2 opacity-50",
-                                                        m.role === 'user' ? "text-white" : "text-gray-400"
-                                                    )}>
-                                                        {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
+                                                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                     {isLoading && (
-                                        <div className="flex justify-start">
-                                            <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-3">
-                                                <Loader2 className="w-4 h-4 text-primary-500 animate-spin" />
-                                                <span className="text-xs text-gray-400 font-medium tracking-wide italic">IASO is thinking...</span>
+                                        <div className="flex gap-3 max-w-[85%] mr-auto items-center">
+                                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary-600">
+                                                <Bot className="w-4 h-4" />
+                                            </div>
+                                            <div className="p-4 bg-gray-50 rounded-2xl rounded-tl-none border border-gray-100">
+                                                <Loader2 className="w-4 h-4 text-primary-600 animate-spin" />
                                             </div>
                                         </div>
                                     )}
                                     <div ref={messagesEndRef} />
                                 </div>
 
-                                {/* Input */}
-                                <div className="p-4 bg-white border-t border-gray-100">
-                                    <div className="relative flex items-center">
+                                {/* Footer / Input */}
+                                <div className="p-3 bg-white border-t border-gray-100">
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            handleSend();
+                                        }}
+                                        className="flex items-center gap-2"
+                                    >
                                         <input
                                             type="text"
+                                            placeholder="Ask anything about reports or symptoms..."
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                                            placeholder="Ask me anything..."
-                                            className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border-2 border-transparent focus:border-primary-100 focus:bg-white rounded-2xl outline-none transition-all text-sm font-medium"
+                                            className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-500 font-medium"
                                         />
                                         <button
-                                            onClick={handleSend}
+                                            type="submit"
                                             disabled={!input.trim() || isLoading}
-                                            className="absolute right-2 p-2 bg-primary-600 text-white rounded-xl shadow-lg shadow-primary-500/30 hover:bg-primary-700 disabled:bg-gray-200 disabled:shadow-none transition-all"
+                                            className="p-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-md shadow-primary-500/20"
                                         >
                                             <Send className="w-4 h-4" />
                                         </button>
-                                    </div>
-                                    <p className="text-[10px] text-center text-gray-400 mt-3 font-medium tracking-wide">
-                                        Powered by IASO GPT-4o • Medical AI Assistant
+                                    </form>
+                                    <p className="text-[10px] text-gray-400 text-center mt-2 font-medium">
+                                        AI may make errors. Always consult a licensed healthcare professional.
                                     </p>
                                 </div>
                             </>
@@ -281,22 +281,16 @@ Model:`;
                 )}
             </AnimatePresence>
 
-            <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                    setIsOpen(true);
-                    setIsMinimized(false);
-                }}
-                className={clsx(
-                    "w-16 h-16 bg-primary-600 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary-500/40 relative group overflow-hidden",
-                    isOpen && "hidden"
-                )}
-            >
-                <div className="absolute inset-0 bg-linear-to-br from-white/20 to-transparent pointer-events-none" />
-                <MessageCircle className="w-7 h-7" />
-                <div className="absolute top-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full m-3" />
-            </motion.button>
+            {!isOpen && (
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsOpen(true)}
+                    className="w-14 h-14 bg-gradient-to-tr from-primary-600 to-primary-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 transition-all border-2 border-white/20"
+                >
+                    <MessageCircle className="w-6 h-6" />
+                </motion.button>
+            )}
         </div>
     );
 }

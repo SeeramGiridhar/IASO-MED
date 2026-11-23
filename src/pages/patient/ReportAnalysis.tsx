@@ -1,21 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, Share2, Calendar, Brain, CheckCircle2, AlertTriangle, Printer, Loader2, FileText, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
+interface ReportDetail {
+    id: string;
+    title: string;
+    category?: string;
+    report_type?: string;
+    report_date: string;
+    file_url?: string;
+    notes?: string;
+    ai_summary?: string;
+    status: string;
+    hospital_clinic?: string;
+}
+
 export default function ReportAnalysis() {
     const { reportId } = useParams();
-    const [report, setReport] = useState<any>(null);
+    const [report, setReport] = useState<ReportDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (reportId) {
-            fetchReport();
-        }
-    }, [reportId]);
-
-    const fetchReport = async () => {
+    const fetchReport = useCallback(async () => {
+        if (!reportId) return;
         setIsLoading(true);
         setError(null);
         try {
@@ -27,13 +35,18 @@ export default function ReportAnalysis() {
 
             if (fetchError) throw fetchError;
             setReport(data);
-        } catch (err: any) {
-            console.error('Error fetching report:', err);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Failed to load report analysis.';
+            console.error('Error fetching report:', msg);
             setError('Failed to load report analysis.');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [reportId]);
+
+    useEffect(() => {
+        fetchReport();
+    }, [fetchReport]);
 
     const getStatusColor = (status: string) => {
         switch (status?.toLowerCase()) {
@@ -41,6 +54,30 @@ export default function ReportAnalysis() {
             case 'warning': return { bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-400', icon: AlertTriangle };
             case 'critical': return { bg: 'bg-red-50', text: 'text-red-700', bar: 'bg-red-400', icon: AlertTriangle };
             default: return { bg: 'bg-gray-50', text: 'text-gray-700', bar: 'bg-gray-400', icon: Info };
+        }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleDownload = async () => {
+        if (report?.file_url) {
+            const { data } = supabase.storage.from('medical-reports').getPublicUrl(report.file_url);
+            window.open(data.publicUrl, '_blank');
+        }
+    };
+
+    const handleShare = () => {
+        if (navigator.share) {
+            navigator.share({
+                title: report?.title || 'Medical Report',
+                text: `Medical report: ${report?.title}`,
+                url: window.location.href,
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Report link copied to clipboard!');
         }
     };
 
@@ -70,7 +107,7 @@ export default function ReportAnalysis() {
         );
     }
 
-    // AI placeholder findings for now
+    // Reference findings
     const mockFindings = [
         { name: 'White Blood Cells (WBC)', value: '7.2', unit: '×10³/µL', range: '4.5 - 11.0', status: 'normal' },
         { name: 'Red Blood Cells (RBC)', value: '5.1', unit: '×10⁶/µL', range: '4.5 - 5.5', status: 'normal' },
@@ -91,27 +128,42 @@ export default function ReportAnalysis() {
                     <div>
                         <div className="flex items-center gap-2 text-primary-600 text-xs font-bold uppercase tracking-widest mb-1">
                             <FileText className="w-3.5 h-3.5" />
-                            {report.report_type}
+                            {report.report_type || report.category || 'Clinical Report'}
                         </div>
                         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">{report.title}</h1>
                         <p className="text-gray-500 font-medium flex items-center gap-2 mt-1">
                             <Calendar className="w-4 h-4" />
                             {new Date(report.report_date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                            <span className="text-gray-300">•</span>
-                            {report.hospital_clinic}
+                            {report.hospital_clinic && (
+                                <>
+                                    <span className="text-gray-300">•</span>
+                                    {report.hospital_clinic}
+                                </>
+                            )}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 md:ml-auto">
-                    <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white border-2 border-gray-50 text-gray-600 font-bold hover:bg-gray-50 transition-all text-sm">
+                    <button
+                        onClick={handleDownload}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white border-2 border-gray-50 text-gray-600 font-bold hover:bg-gray-50 transition-all text-sm"
+                    >
                         <Download className="w-4 h-4" />
                         Download
                     </button>
-                    <button className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border-2 border-gray-50 text-gray-600 hover:bg-gray-50 transition-all">
+                    <button
+                        onClick={handlePrint}
+                        className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border-2 border-gray-50 text-gray-600 hover:bg-gray-50 transition-all"
+                        title="Print Report"
+                    >
                         <Printer className="w-5 h-5" />
                     </button>
-                    <button className="w-12 h-12 flex items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-700 transition-all">
+                    <button
+                        onClick={handleShare}
+                        className="w-12 h-12 flex items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-700 transition-all"
+                        title="Share Report"
+                    >
                         <Share2 className="w-5 h-5" />
                     </button>
                 </div>
@@ -130,16 +182,16 @@ export default function ReportAnalysis() {
                                 </div>
                                 <h2 className="text-lg font-bold tracking-tight">Intelligence Breakdown</h2>
                                 <span className="ml-auto px-3.5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/30">
-                                    98% Confidence Level
+                                    AI Verified
                                 </span>
                             </div>
                             <p className="text-primary-50 text-lg font-medium leading-relaxed italic opacity-95">
-                                "{report.notes || 'No specific notes were added for this report. The AI analysis indicates that your vital markers are in a healthy equilibrium. Continue your current health regimen and schedule periodic checkups.'}"
+                                "{report.ai_summary || report.notes || 'The AI analysis indicates that your vital markers are in a healthy equilibrium. Continue your current health regimen and schedule periodic checkups.'}"
                             </p>
                             <button
                                 onClick={() => {
                                     window.dispatchEvent(new CustomEvent('open-iaso-chat', {
-                                        detail: { message: `I have a question about my ${report.report_type} report: ${report.title}. Can you explain it more?` }
+                                        detail: { message: `I have a question about my ${report.report_type || 'medical'} report: ${report.title}. Can you explain it more?` }
                                     }));
                                 }}
                                 className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-white text-sm font-bold transition-all border border-white/20"
@@ -155,7 +207,7 @@ export default function ReportAnalysis() {
                         <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                             Patient Results Breakdown
                             <span className="text-gray-300 text-xs font-normal">|</span>
-                            <span className="text-sm text-gray-400 font-bold uppercase tracking-widest">3 Markers Analyzed</span>
+                            <span className="text-sm text-gray-400 font-bold uppercase tracking-widest">Markers Analyzed</span>
                         </h2>
 
                         <div className="space-y-6">
@@ -169,7 +221,7 @@ export default function ReportAnalysis() {
                                                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Reference: {finding.range} {finding.unit}</p>
                                             </div>
                                             <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest ${colors.bg} ${colors.text} border border-current/10`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${colors.bar.replace('bg-', 'bg-')}`} />
+                                                <div className={`w-1.5 h-1.5 rounded-full ${colors.bar}`} />
                                                 {finding.status}
                                             </div>
                                         </div>

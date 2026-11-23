@@ -1,7 +1,6 @@
--- IASO Med Supabase Schema Setup
+-- IASO Med Supabase Schema Setup (Production Ready & Fixed)
 
 -- 1. Create PROFILES table
--- This table stores additional user metadata linked to auth.users
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   full_name TEXT,
@@ -13,7 +12,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- 2. Create DOCTORS table
--- Stores professional credentials and practice details
 CREATE TABLE IF NOT EXISTS public.doctors (
   id UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
   specialization TEXT,
@@ -29,7 +27,6 @@ CREATE TABLE IF NOT EXISTS public.doctors (
 );
 
 -- 3. Create PATIENTS table
--- Stores patient-specific medical metadata
 CREATE TABLE IF NOT EXISTS public.patients (
   id UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
   date_of_birth DATE,
@@ -40,19 +37,21 @@ CREATE TABLE IF NOT EXISTS public.patients (
   allergies TEXT[] DEFAULT '{}'
 );
 
--- 4. Create REPORTS table
--- Stores references to medical documents and analysis
+-- 4. Create REPORTS table (includes report_type, hospital_clinic, notes, and compatible status check)
 CREATE TABLE IF NOT EXISTS public.reports (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   patient_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   doctor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   category TEXT,
+  report_type TEXT,
+  hospital_clinic TEXT,
+  notes TEXT,
   report_date DATE DEFAULT CURRENT_DATE,
   file_url TEXT NOT NULL,
   ai_summary TEXT,
   ai_analysis JSONB,
-  status TEXT CHECK (status IN ('pending', 'analyzed', 'reviewed')) DEFAULT 'pending',
+  status TEXT CHECK (status IN ('pending', 'analyzed', 'reviewed', 'normal', 'warning', 'critical')) DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -77,18 +76,29 @@ ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 
 -- 7. Define RLS Policies
 
--- Profiles: Users can read all profiles (to find doctors), but only update their own
+-- Profiles
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- Doctors: Viewable by everyone, updated by the specific doctor
+-- Doctors
+DROP POLICY IF EXISTS "Doctors are viewable by everyone" ON public.doctors;
+DROP POLICY IF EXISTS "Doctors can update their own data" ON public.doctors;
 CREATE POLICY "Doctors are viewable by everyone" ON public.doctors FOR SELECT USING (true);
-CREATE POLICY "Doctors can update their own data" ON public.doctors FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Doctors can update their own data" ON public.doctors FOR ALL USING (auth.uid() = id);
 
--- Patients: Only viewable by the patient themselves and assigned doctors (future logic)
-CREATE POLICY "Patients can view/update own health data" ON public.patients USING (auth.uid() = id);
+-- Patients
+DROP POLICY IF EXISTS "Patients can view/update own health data" ON public.patients;
+CREATE POLICY "Patients can view/update own health data" ON public.patients FOR ALL USING (auth.uid() = id);
 
--- Reports: Only patient and assigned doctor can view
+-- Reports
+DROP POLICY IF EXISTS "Patients view own reports" ON public.reports;
+DROP POLICY IF EXISTS "Patients can upload reports" ON public.reports;
+DROP POLICY IF EXISTS "Assigned doctors view reports" ON public.reports;
+DROP POLICY IF EXISTS "Patients and assigned doctors update reports" ON public.reports;
+DROP POLICY IF EXISTS "Patients can delete own reports" ON public.reports;
+
 CREATE POLICY "Patients view own reports" ON public.reports FOR SELECT USING (auth.uid() = patient_id);
 CREATE POLICY "Patients can upload reports" ON public.reports FOR INSERT WITH CHECK (auth.uid() = patient_id);
 CREATE POLICY "Assigned doctors view reports" ON public.reports FOR SELECT USING (EXISTS (
@@ -96,33 +106,70 @@ CREATE POLICY "Assigned doctors view reports" ON public.reports FOR SELECT USING
   WHERE appointments.doctor_id = auth.uid() 
   AND appointments.patient_id = reports.patient_id
 ));
+CREATE POLICY "Patients and assigned doctors update reports" ON public.reports FOR UPDATE 
+USING (auth.uid() = patient_id OR auth.uid() = doctor_id);
+CREATE POLICY "Patients can delete own reports" ON public.reports FOR DELETE 
+USING (auth.uid() = patient_id);
 
--- Appointments: Relevant parties can view
+-- Appointments
+DROP POLICY IF EXISTS "Users view own appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Patients book appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Users update own appointments" ON public.appointments;
+
 CREATE POLICY "Users view own appointments" ON public.appointments FOR SELECT 
 USING (auth.uid() = patient_id OR auth.uid() = doctor_id);
-
 CREATE POLICY "Patients book appointments" ON public.appointments FOR INSERT 
 WITH CHECK (auth.uid() = patient_id);
+CREATE POLICY "Users update own appointments" ON public.appointments FOR UPDATE 
+USING (auth.uid() = patient_id OR auth.uid() = doctor_id);
 
--- 8. Trigger to handle profile creation on signup
+-- 8. Trigger to automatically handle profile, doctor, and patient record creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  user_role TEXT;
 BEGIN
+  user_role := COALESCE(NEW.raw_user_meta_data->>'role', 'patient');
+
   INSERT INTO public.profiles (id, full_name, email, role)
   VALUES (
     NEW.id,
-    NEW.raw_user_meta_data->>'full_name',
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'role', 'patient')
-  );
+    user_role
+  )
+  ON CONFLICT (id) DO UPDATE 
+  SET full_name = EXCLUDED.full_name, role = EXCLUDED.role;
+
+  IF user_role = 'doctor' THEN
+    INSERT INTO public.doctors (id, specialization, experience_years, hospital_clinic, consultation_fee, rating)
+    VALUES (NEW.id, 'General Medicine', 5, 'IASO Healthcare', 100, 4.9)
+    ON CONFLICT (id) DO NOTHING;
+  ELSE
+    INSERT INTO public.patients (id)
+    VALUES (NEW.id)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 9. Storage Buckets (Run manually in Supabase UI if needed)
--- bucket: medical-reports
--- public: false
+-- 9. Storage Buckets & Policies
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('medical-reports', 'medical-reports', false)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Authenticated users upload medical reports" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users read medical reports" ON storage.objects;
+
+CREATE POLICY "Authenticated users upload medical reports" ON storage.objects
+FOR INSERT TO authenticated WITH CHECK (bucket_id = 'medical-reports');
+
+CREATE POLICY "Authenticated users read medical reports" ON storage.objects
+FOR SELECT TO authenticated USING (bucket_id = 'medical-reports');

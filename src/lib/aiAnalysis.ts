@@ -1,6 +1,6 @@
 /**
  * IASO Med - AI Medical Report Analysis Service
- * Uses Google Gemini Pro Vision to analyze medical report images and extract insights
+ * Uses Google Gemini (gemini-2.0-flash) to analyze medical report images and extract insights
  */
 
 interface AnalysisResult {
@@ -11,7 +11,7 @@ interface AnalysisResult {
 }
 
 /**
- * Analyzes a medical report image using Google Gemini Pro Vision
+ * Analyzes a medical report image using Google Gemini
  */
 export async function analyzeMedicalReport(file: File): Promise<AnalysisResult> {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -27,7 +27,7 @@ export async function analyzeMedicalReport(file: File): Promise<AnalysisResult> 
 
         const mimeType = file.type || 'image/jpeg';
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -88,11 +88,9 @@ IMPORTANT:
             jsonString = jsonMatch[1];
         }
 
-        // Remove any leading/trailing whitespace
         jsonString = jsonString.trim();
 
         const analysis: AnalysisResult = JSON.parse(jsonString);
-
         return analysis;
     } catch (error) {
         console.error('Report analysis error:', error);
@@ -126,7 +124,7 @@ export async function generateReportSummary(
     }
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

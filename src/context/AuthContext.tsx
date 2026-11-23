@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -24,6 +25,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const mapUser = useCallback((supabaseUser: SupabaseUser) => {
+        setUser({
+            id: supabaseUser.id,
+            name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+            email: supabaseUser.email || '',
+            role: (supabaseUser.user_metadata?.role as UserRole) || 'patient'
+        });
+    }, []);
+
     useEffect(() => {
         // Check active session on mount
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -34,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
                 mapUser(session.user);
             } else {
@@ -44,16 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         return () => subscription.unsubscribe();
-    }, []);
-
-    const mapUser = (supabaseUser: SupabaseUser) => {
-        setUser({
-            id: supabaseUser.id,
-            name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
-            email: supabaseUser.email || '',
-            role: (supabaseUser.user_metadata?.role as UserRole) || 'patient'
-        });
-    };
+    }, [mapUser]);
 
     const logout = async () => {
         await supabase.auth.signOut();

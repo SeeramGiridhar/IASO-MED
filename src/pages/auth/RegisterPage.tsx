@@ -62,8 +62,9 @@ export default function RegisterPage() {
             // But our SQL trigger handles profile creation.
             alert('Registration successful! Please check your email or sign in.');
             navigate('/login');
-        } catch (err: any) {
-            setError(err.message || 'An error occurred during registration');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'An error occurred during registration';
+            setError(message || 'An error occurred during registration');
         } finally {
             setIsLoading(false);
         }
