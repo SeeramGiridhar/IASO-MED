@@ -187,7 +187,7 @@ BEGIN
         THEN (NEW.raw_user_meta_data->>'consultation_fee')::NUMERIC(10,2) 
         ELSE NULL 
       END,
-      0.00,
+      NULL,
       FALSE
     )
     ON CONFLICT (id) DO UPDATE 
@@ -238,3 +238,20 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 8. Data integrity: Stop creating fake defaults, expand report statuses, and flag ambiguous records
+ALTER TABLE public.doctors 
+  ADD COLUMN IF NOT EXISTS review_status TEXT DEFAULT 'verified';
+
+ALTER TABLE public.doctors 
+  ALTER COLUMN rating DROP DEFAULT;
+
+-- Flag ambiguous older values for review instead of deleting genuine doctor records
+UPDATE public.doctors 
+SET review_status = 'review_needed' 
+WHERE rating = 4.90 OR rating = 4.9;
+
+-- Expand report status check constraint to include unavailable and failed statuses
+ALTER TABLE public.reports DROP CONSTRAINT IF EXISTS reports_status_check;
+ALTER TABLE public.reports ADD CONSTRAINT reports_status_check 
+  CHECK (status IN ('pending', 'analyzed', 'reviewed', 'normal', 'warning', 'critical', 'unavailable', 'failed'));

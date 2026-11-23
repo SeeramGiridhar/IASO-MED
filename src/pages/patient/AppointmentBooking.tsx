@@ -337,10 +337,18 @@ export default function AppointmentBooking() {
                             <p className="text-sm text-primary-600 font-bold uppercase tracking-wider">{doctor.specialization}</p>
 
                             <div className="flex items-center gap-1.5 text-amber-500 mt-3 font-bold">
-                                <Star className="w-4 h-4 fill-current" />
-                                <span className="text-gray-900">{doctor.rating && doctor.rating > 0 ? doctor.rating.toFixed(1) : 'New'}</span>
+                                {doctor.rating != null && doctor.rating > 0 ? (
+                                    <>
+                                        <Star className="w-4 h-4 fill-current" />
+                                        <span className="text-gray-900">{doctor.rating.toFixed(1)}</span>
+                                    </>
+                                ) : (
+                                    <span className="text-xs text-gray-500">No reviews yet</span>
+                                )}
                                 <span className="text-gray-300 mx-1 font-normal">|</span>
-                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{doctor.experience > 0 ? `${doctor.experience} Yrs Exp` : 'Exp: New'}</span>
+                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                                    {doctor.experience != null ? `${doctor.experience} Yrs Exp` : 'Exp: Not provided'}
+                                </span>
                             </div>
                         </div>
 
@@ -349,14 +357,16 @@ export default function AppointmentBooking() {
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block">Affiliation</span>
                                 <div className="flex items-start gap-2">
                                     <MapPin className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
-                                    <span className="text-sm font-bold text-gray-700 leading-snug">{doctor.hospital || 'Private Medical Clinic'}</span>
+                                    <span className="text-sm font-bold text-gray-700 leading-snug">{doctor.hospital || 'Not provided'}</span>
                                 </div>
                             </div>
 
                             <div className="p-5 bg-gray-50 rounded-2xl flex items-center justify-between">
                                 <div className="flex flex-col">
                                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fee</span>
-                                    <span className="text-lg font-bold text-primary-600">{doctor.fee > 0 ? `$${doctor.fee}` : 'Free / Not set'}</span>
+                                    <span className="text-lg font-bold text-primary-600">
+                                        {doctor.fee != null ? `$${doctor.fee}` : 'Not provided'}
+                                    </span>
                                 </div>
                                 <div className="p-3 bg-white rounded-xl text-primary-600 shadow-sm">
                                     <DollarSign className="w-5 h-5" />

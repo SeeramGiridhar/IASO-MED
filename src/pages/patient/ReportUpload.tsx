@@ -83,7 +83,7 @@ export default function ReportUpload() {
                 const msg = aiError instanceof Error ? aiError.message : String(aiError);
                 console.warn('AI analysis skipped or unavailable:', msg);
                 aiSummary = null;
-                reportStatus = 'pending';
+                reportStatus = 'unavailable';
             }
 
             // 3. Save metadata to the reports table

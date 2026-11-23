@@ -10,10 +10,10 @@ interface DoctorItem {
     name: string;
     avatar: string;
     specialization: string;
-    experience: number;
-    hospital: string;
-    fee: number;
-    rating: number;
+    experience: number | null;
+    hospital: string | null;
+    fee: number | null;
+    rating: number | null;
     isVerified: boolean;
 }
 
@@ -57,13 +57,13 @@ export default function DoctorSearch() {
                 const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
                 return {
                     id: d.id,
-                    name: profile?.full_name || 'Dr. Specialist',
+                    name: profile?.full_name || 'Doctor',
                     avatar: profile?.avatar_url || '',
-                    specialization: d.specialization || 'General Medicine',
-                    experience: d.experience_years || 0,
-                    hospital: d.hospital_clinic || 'Independent Practice',
-                    fee: d.consultation_fee || 0,
-                    rating: d.rating || 0,
+                    specialization: d.specialization || 'Not specified',
+                    experience: d.experience_years != null ? Number(d.experience_years) : null,
+                    hospital: d.hospital_clinic || null,
+                    fee: d.consultation_fee != null ? Number(d.consultation_fee) : null,
+                    rating: d.rating != null && Number(d.rating) > 0 ? Number(d.rating) : null,
                     isVerified: Boolean(d.is_verified),
                 };
             });
@@ -88,14 +88,14 @@ export default function DoctorSearch() {
             const matchesSearch = !query ||
                 d.name.toLowerCase().includes(query) ||
                 d.specialization.toLowerCase().includes(query) ||
-                d.hospital.toLowerCase().includes(query);
+                (d.hospital ? d.hospital.toLowerCase().includes(query) : false);
             const matchesSpec = selectedSpec === 'All' || d.specialization === selectedSpec;
             return matchesSearch && matchesSpec;
         })
         .sort((a, b) => {
-            if (sortBy === 'rating') return b.rating - a.rating;
-            if (sortBy === 'fee') return a.fee - b.fee;
-            if (sortBy === 'experience') return b.experience - a.experience;
+            if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+            if (sortBy === 'fee') return (a.fee || 0) - (b.fee || 0);
+            if (sortBy === 'experience') return (b.experience || 0) - (a.experience || 0);
             return 0;
         });
 
@@ -190,9 +190,17 @@ export default function DoctorSearch() {
                                     </div>
                                     <h3 className="font-bold text-gray-900 text-lg group-hover:text-primary-600 transition-colors truncate">{doctor.name}</h3>
                                     <div className="flex items-center gap-1 text-amber-500 mt-1">
-                                        <Star className="w-4 h-4 fill-current" />
-                                        <span className="text-sm font-bold text-gray-900">{doctor.rating && doctor.rating > 0 ? doctor.rating.toFixed(1) : 'New'}</span>
-                                        <span className="text-xs text-gray-400 font-medium ml-1">({doctor.experience > 0 ? `${doctor.experience} yrs exp` : 'New'})</span>
+                                        {doctor.rating != null && doctor.rating > 0 ? (
+                                            <>
+                                                <Star className="w-4 h-4 fill-current" />
+                                                <span className="text-sm font-bold text-gray-900">{doctor.rating.toFixed(1)}</span>
+                                            </>
+                                        ) : (
+                                            <span className="text-xs font-semibold text-gray-500">No reviews yet</span>
+                                        )}
+                                        <span className="text-xs text-gray-400 font-medium ml-1">
+                                            ({doctor.experience != null ? `${doctor.experience} yrs exp` : 'Exp: Not provided'})
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -201,11 +209,11 @@ export default function DoctorSearch() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Clinic / Hospital</span>
-                                        <span className="text-sm font-semibold text-gray-700 truncate max-w-[140px]">{doctor.hospital}</span>
+                                        <span className="text-sm font-semibold text-gray-700 truncate max-w-[140px]">{doctor.hospital || 'Not provided'}</span>
                                     </div>
                                     <div className="flex flex-col items-end">
                                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Consultation</span>
-                                        <span className="text-sm font-bold text-primary-600">${doctor.fee}</span>
+                                        <span className="text-sm font-bold text-primary-600">{doctor.fee != null ? `$${doctor.fee}` : 'Not provided'}</span>
                                     </div>
                                 </div>
 

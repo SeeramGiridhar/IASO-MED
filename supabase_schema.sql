@@ -21,8 +21,9 @@ CREATE TABLE IF NOT EXISTS public.doctors (
   bio TEXT,
   hospital_clinic TEXT,
   consultation_fee NUMERIC(10, 2),
-  rating NUMERIC(3, 2) DEFAULT 0.00,
+  rating NUMERIC(3, 2) DEFAULT NULL,
   is_verified BOOLEAN DEFAULT FALSE,
+  review_status TEXT DEFAULT 'verified',
   availability JSONB DEFAULT '[]'::jsonb
 );
 
@@ -53,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
   file_urls TEXT[] DEFAULT '{}',
   ai_summary TEXT,
   ai_analysis JSONB,
-  status TEXT CHECK (status IN ('pending', 'analyzed', 'reviewed', 'normal', 'warning', 'critical')) DEFAULT 'pending',
+  status TEXT CHECK (status IN ('pending', 'analyzed', 'reviewed', 'normal', 'warning', 'critical', 'unavailable', 'failed')) DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -236,7 +237,7 @@ BEGIN
         THEN (NEW.raw_user_meta_data->>'consultation_fee')::NUMERIC(10,2) 
         ELSE NULL 
       END,
-      0.00,
+      NULL,
       FALSE
     )
     ON CONFLICT (id) DO UPDATE 
