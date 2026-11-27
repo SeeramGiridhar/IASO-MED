@@ -21,7 +21,7 @@ export default function HelpCenterPage() {
                 },
                 {
                     q: 'How do I create an account?',
-                    a: 'Click "Sign Up" at the top right of the homepage. You can register as either a "Patient" (to upload reports and book visits) or a "Doctor" (to review patient records and manage your schedule).',
+                    a: 'Click "Get Started" at the top right of the homepage. You can register as either a "Patient" (to upload reports and book visits) or a "Doctor" (to review patient records and manage your schedule).',
                 },
             ],
         },
@@ -136,7 +136,7 @@ export default function HelpCenterPage() {
                                         </div>
                                         <div>
                                             <h2 className="text-lg font-bold text-gray-900">{category.title}</h2>
-                                            <p className="text-xs text-gray-500">{category.faqs.length} articles</p>
+                                            <p className="text-xs text-gray-500">{category.faqs.length} {category.faqs.length === 1 ? 'article' : 'articles'}</p>
                                         </div>
                                     </div>
                                     <ChevronDown

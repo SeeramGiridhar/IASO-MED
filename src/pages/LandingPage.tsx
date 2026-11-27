@@ -378,7 +378,7 @@ export default function LandingPage() {
 
                                 <div className="pt-1">
                                     <Link
-                                        to={isAuthenticated && user?.role === 'doctor' ? '/doctor/dashboard' : '/register'}
+                                        to={isAuthenticated && user?.role === 'doctor' ? '/doctor/dashboard' : '/login?role=doctor'}
                                         className="w-full py-2.5 px-4 bg-primary-500/20 hover:bg-primary-500/30 text-primary-300 hover:text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-primary-500/30 transition-colors"
                                     >
                                         Open Clinician Console &rarr;

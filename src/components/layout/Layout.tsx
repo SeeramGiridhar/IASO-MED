@@ -11,8 +11,23 @@ export default function Layout() {
     const location = useLocation();
 
     useEffect(() => {
-        window.scrollTo(0, 0);
-    }, [location.pathname]);
+        if (location.hash) {
+            const targetId = location.hash;
+            let attempts = 0;
+            const tryScroll = () => {
+                const el = document.querySelector(targetId);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                } else if (attempts < 10) {
+                    attempts++;
+                    setTimeout(tryScroll, 80);
+                }
+            };
+            tryScroll();
+        } else {
+            window.scrollTo(0, 0);
+        }
+    }, [location.pathname, location.hash]);
 
     useEffect(() => {
         const handleOpenChat = () => setIsChatLoaded(true);
@@ -29,17 +44,12 @@ export default function Layout() {
             <Footer />
             {isChatLoaded ? (
                 <Suspense fallback={null}>
-                    <ChatBot />
+                    <ChatBot initialOpen />
                 </Suspense>
             ) : (
                 <div className="fixed bottom-6 right-6 z-40">
                     <button
-                        onClick={() => {
-                            setIsChatLoaded(true);
-                            setTimeout(() => {
-                                window.dispatchEvent(new CustomEvent('open-iaso-chat'));
-                            }, 50);
-                        }}
+                        onClick={() => setIsChatLoaded(true)}
                         className="w-14 h-14 bg-gradient-to-tr from-primary-600 to-primary-500 rounded-full flex items-center justify-center text-white shadow-2xl shadow-primary-900/40 ring-4 ring-white/80 hover:shadow-primary-500/50 transition-all hover:scale-105 cursor-pointer"
                         aria-label="Open Health Assistant"
                         title="Chat with IASO AI"

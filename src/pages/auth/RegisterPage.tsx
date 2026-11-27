@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Heart, Stethoscope, AlertCircle, Eye, EyeOff, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const roleParam = searchParams.get('role');
+    const initialRole = roleParam === 'doctor' || roleParam === 'patient' ? roleParam : null;
     const [step, setStep] = useState(1);
-    const [userType, setUserType] = useState<'patient' | 'doctor' | null>(null);
+    const [userType, setUserType] = useState<'patient' | 'doctor' | null>(initialRole);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -304,6 +307,23 @@ export default function RegisterPage() {
         <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 py-12 px-4">
             <div className="relative w-full max-w-md">
                 <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setUserType(null);
+                                setStep(1);
+                                setError(null);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-primary-600 transition-colors"
+                        >
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            Change Role
+                        </button>
+                        <Link to="/login" className="text-xs font-bold text-primary-600 hover:text-primary-700">
+                            Sign in
+                        </Link>
+                    </div>
                     <div className="text-center mb-6">
                         <Link to="/" className="inline-flex items-center gap-2">
                             <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg"><Heart className="w-5 h-5 text-white" /></div>
@@ -347,6 +367,11 @@ export default function RegisterPage() {
                             </button>
                         </div>
                     </form>
+
+                    <p className="mt-6 text-center text-sm text-gray-600">
+                        Already have an account?{' '}
+                        <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700">Sign in</Link>
+                    </p>
                 </div>
             </div>
         </div>
