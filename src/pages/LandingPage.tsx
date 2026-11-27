@@ -117,7 +117,7 @@ export default function LandingPage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-gray-900">Comprehensive Metabolic Panel</p>
-                                            <p className="text-xs text-gray-400">Sample Lab Analysis &bull; AI Extracted</p>
+                                            <p className="text-xs text-gray-600">Sample Lab Analysis &bull; AI Extracted</p>
                                         </div>
                                     </div>
                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold">
@@ -130,48 +130,48 @@ export default function LandingPage() {
                                 <div className="grid grid-cols-2 gap-2.5">
                                     <div className="p-3 bg-amber-50/70 border border-amber-100 rounded-2xl">
                                         <div className="flex justify-between items-start">
-                                            <span className="text-[11px] font-medium text-gray-600">Fasting Glucose</span>
-                                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">High</span>
+                                            <span className="text-[11px] font-medium text-gray-700">Fasting Glucose</span>
+                                            <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">High</span>
                                         </div>
-                                        <p className="text-base font-extrabold text-gray-900 mt-1">108 <span className="text-xs font-normal text-gray-500">mg/dL</span></p>
-                                        <p className="text-[10px] text-gray-400 mt-0.5">Ref: 70–99 mg/dL</p>
+                                        <p className="text-base font-extrabold text-gray-900 mt-1">108 <span className="text-xs font-normal text-gray-600">mg/dL</span></p>
+                                        <p className="text-[10px] text-gray-600 mt-0.5">Ref: 70–99 mg/dL</p>
                                     </div>
 
                                     <div className="p-3 bg-gray-50 border border-gray-100 rounded-2xl">
                                         <div className="flex justify-between items-start">
-                                            <span className="text-[11px] font-medium text-gray-600">Total Cholesterol</span>
-                                            <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Normal</span>
+                                            <span className="text-[11px] font-medium text-gray-700">Total Cholesterol</span>
+                                            <span className="text-[10px] font-bold text-green-800 bg-green-100 px-1.5 py-0.5 rounded">Normal</span>
                                         </div>
-                                        <p className="text-base font-extrabold text-gray-900 mt-1">182 <span className="text-xs font-normal text-gray-500">mg/dL</span></p>
-                                        <p className="text-[10px] text-gray-400 mt-0.5">Ref: &lt; 200 mg/dL</p>
+                                        <p className="text-base font-extrabold text-gray-900 mt-1">182 <span className="text-xs font-normal text-gray-600">mg/dL</span></p>
+                                        <p className="text-[10px] text-gray-600 mt-0.5">Ref: &lt; 200 mg/dL</p>
                                     </div>
 
                                     <div className="p-3 bg-gray-50 border border-gray-100 rounded-2xl">
                                         <div className="flex justify-between items-start">
-                                            <span className="text-[11px] font-medium text-gray-600">Hemoglobin</span>
-                                            <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Optimal</span>
+                                            <span className="text-[11px] font-medium text-gray-700">Hemoglobin</span>
+                                            <span className="text-[10px] font-bold text-green-800 bg-green-100 px-1.5 py-0.5 rounded">Optimal</span>
                                         </div>
-                                        <p className="text-base font-extrabold text-gray-900 mt-1">14.6 <span className="text-xs font-normal text-gray-500">g/dL</span></p>
-                                        <p className="text-[10px] text-gray-400 mt-0.5">Ref: 13.5–17.5 g/dL</p>
+                                        <p className="text-base font-extrabold text-gray-900 mt-1">14.6 <span className="text-xs font-normal text-gray-600">g/dL</span></p>
+                                        <p className="text-[10px] text-gray-600 mt-0.5">Ref: 13.5–17.5 g/dL</p>
                                     </div>
 
                                     <div className="p-3 bg-gray-50 border border-gray-100 rounded-2xl">
                                         <div className="flex justify-between items-start">
-                                            <span className="text-[11px] font-medium text-gray-600">eGFR (Kidney)</span>
-                                            <span className="text-[10px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded">&gt; 90</span>
+                                            <span className="text-[11px] font-medium text-gray-700">eGFR (Kidney)</span>
+                                            <span className="text-[10px] font-bold text-green-800 bg-green-100 px-1.5 py-0.5 rounded">&gt; 90</span>
                                         </div>
-                                        <p className="text-base font-extrabold text-gray-900 mt-1">98 <span className="text-xs font-normal text-gray-500">mL/min</span></p>
-                                        <p className="text-[10px] text-gray-400 mt-0.5">Ref: &gt; 60 mL/min</p>
+                                        <p className="text-base font-extrabold text-gray-900 mt-1">98 <span className="text-xs font-normal text-gray-600">mL/min</span></p>
+                                        <p className="text-[10px] text-gray-600 mt-0.5">Ref: &gt; 60 mL/min</p>
                                     </div>
                                 </div>
 
                                 {/* Plain-Language Clinical Summary Box */}
                                 <div className="p-3.5 bg-primary-50/60 rounded-2xl border border-primary-100">
                                     <div className="flex items-center gap-1.5 text-xs font-bold text-primary-800 mb-1">
-                                        <Brain className="w-3.5 h-3.5 text-primary-600" />
+                                        <Brain className="w-3.5 h-3.5 text-primary-700" />
                                         Plain-Language AI Summary
                                     </div>
-                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                    <p className="text-xs text-gray-700 leading-relaxed">
                                         Blood panel shows optimal kidney &amp; lipid profiles. Fasting glucose is slightly elevated above normal baseline. Consider reviewing diet with a physician.
                                     </p>
                                 </div>
@@ -179,12 +179,12 @@ export default function LandingPage() {
                                 {/* Specialist Callout */}
                                 <div className="flex items-center justify-between pt-1">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
+                                        <div className="w-7 h-7 rounded-lg bg-green-100 text-green-800 flex items-center justify-center">
                                             <Stethoscope className="w-4 h-4" />
                                         </div>
-                                        <span className="text-xs text-gray-600 font-medium">Recommended: General Physician review</span>
+                                        <span className="text-xs text-gray-700 font-medium">Recommended: General Physician review</span>
                                     </div>
-                                    <Link to="/patient/doctors" className="text-xs font-bold text-primary-600 hover:text-primary-700 hover:underline">
+                                    <Link to="/patient/doctors" className="text-xs font-bold text-primary-700 hover:text-primary-800 hover:underline">
                                         Find Doctors &rarr;
                                     </Link>
                                 </div>
@@ -308,8 +308,8 @@ export default function LandingPage() {
                                             <item.icon className="w-5 h-5 text-primary-400" />
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-white mb-1">{item.title}</h4>
-                                            <p className="text-gray-400 text-sm">{item.desc}</p>
+                                            <h3 className="font-semibold text-white mb-1">{item.title}</h3>
+                                            <p className="text-gray-300 text-sm">{item.desc}</p>
                                         </div>
                                     </div>
                                 ))}
