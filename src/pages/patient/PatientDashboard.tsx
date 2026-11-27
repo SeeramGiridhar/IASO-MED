@@ -10,7 +10,8 @@ import {
     Clock,
     Plus,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -307,11 +308,20 @@ export default function PatientDashboard() {
                                         <div className="flex-1 pb-6 group-last:pb-0">
                                             <h4 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{appt.doctor?.full_name || 'Doctor'}</h4>
                                             <p className="text-xs text-primary-600 font-bold uppercase mb-2">Consultation</p>
-                                            <div className="flex items-center gap-3 text-xs text-gray-400 font-bold">
+                                            <div className="flex items-center justify-between gap-3 text-xs text-gray-400 font-bold">
                                                 <span className="flex items-center gap-1">
                                                     <Clock className="w-3.5 h-3.5" />
                                                     {new Date(appt.appointment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
+                                                {appt.doctor?.id && (
+                                                    <Link
+                                                        to={`/patient/messages/${appt.doctor.id}`}
+                                                        className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-bold"
+                                                    >
+                                                        <MessageSquare className="w-3.5 h-3.5" />
+                                                        Message
+                                                    </Link>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

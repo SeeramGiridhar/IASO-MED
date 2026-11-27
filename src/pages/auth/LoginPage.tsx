@@ -33,8 +33,21 @@ export default function LoginPage() {
 
             if (signInError) throw signInError;
 
-            const role = data.user?.user_metadata?.role;
-            navigate(role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard');
+            let role = data.user?.user_metadata?.role;
+            if (data.user?.id) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .maybeSingle();
+                if (profile?.role) role = profile.role;
+            }
+
+            if (role === 'admin') {
+                navigate('/admin/verifications');
+            } else {
+                navigate(role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard');
+            }
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Invalid email or password';
             setError(message || 'Invalid email or password');

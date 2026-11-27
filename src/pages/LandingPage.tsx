@@ -17,9 +17,11 @@ import {
     UserCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getHomeRouteForRole } from '../lib/utils';
 
 export default function LandingPage() {
     const { isAuthenticated, user } = useAuth();
+    const dashboardPath = getHomeRouteForRole(user?.role);
     return (
         <div className="overflow-hidden">
             {/* Hero Section */}
@@ -58,18 +60,20 @@ export default function LandingPage() {
                             {isAuthenticated ? (
                                 <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                                     <Link
-                                        to={user?.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'}
+                                        to={dashboardPath}
                                         className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl hover:from-primary-600 hover:to-primary-700 shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 transition-all group"
                                     >
-                                        Go to Dashboard
+                                        {user?.role === 'admin' ? 'Doctor Approvals Console' : 'Go to Dashboard'}
                                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                     </Link>
-                                    <Link
-                                        to={user?.role === 'doctor' ? '/doctor/reports' : '/patient/upload'}
-                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-2xl hover:border-primary-300 hover:text-primary-600 transition-all"
-                                    >
-                                        {user?.role === 'doctor' ? 'Review Patient Reports' : 'Upload Medical Report'}
-                                    </Link>
+                                    {user?.role !== 'admin' && (
+                                        <Link
+                                            to={user?.role === 'doctor' ? '/doctor/reports' : '/patient/upload'}
+                                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-2xl hover:border-primary-300 hover:text-primary-600 transition-all"
+                                        >
+                                            {user?.role === 'doctor' ? 'Review Patient Reports' : 'Upload Medical Report'}
+                                        </Link>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
@@ -398,18 +402,20 @@ export default function LandingPage() {
                     {isAuthenticated ? (
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link
-                                to={user?.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'}
+                                to={dashboardPath}
                                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-primary-700 bg-white rounded-2xl hover:bg-gray-50 shadow-xl transition-all group"
                             >
-                                Go to Dashboard
+                                {user?.role === 'admin' ? 'Doctor Approvals Console' : 'Go to Dashboard'}
                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </Link>
-                            <Link
-                                to={user?.role === 'doctor' ? '/doctor/reports' : '/patient/upload'}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white border-2 border-white/30 rounded-2xl hover:bg-white/10 transition-all"
-                            >
-                                {user?.role === 'doctor' ? 'Review Patient Reports' : 'Upload Medical Report'}
-                            </Link>
+                            {user?.role !== 'admin' && (
+                                <Link
+                                    to={user?.role === 'doctor' ? '/doctor/reports' : '/patient/upload'}
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white border-2 border-white/30 rounded-2xl hover:bg-white/10 transition-all"
+                                >
+                                    {user?.role === 'doctor' ? 'Review Patient Reports' : 'Upload Medical Report'}
+                                </Link>
+                            )}
                         </div>
                     ) : (
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

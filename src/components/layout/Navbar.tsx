@@ -31,17 +31,23 @@ export default function Navbar() {
                                 <Link to="/help" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Help</Link>
                             </>
                         ) : (
-                            user?.role === 'patient' ? (
+                            user?.role === 'admin' ? (
+                                <>
+                                    <Link to="/admin/verifications" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Doctor Approvals</Link>
+                                </>
+                            ) : user?.role === 'patient' ? (
                                 <>
                                     <Link to="/patient/dashboard" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Dashboard</Link>
                                     <Link to="/patient/reports" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Reports</Link>
                                     <Link to="/patient/doctors" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Find Doctors</Link>
+                                    <Link to="/patient/messages" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Messages</Link>
                                 </>
                             ) : (
                                 <>
                                     <Link to="/doctor/dashboard" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Dashboard</Link>
                                     <Link to="/doctor/reports" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Reports</Link>
                                     <Link to="/doctor/schedule" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Schedule</Link>
+                                    <Link to="/doctor/messages" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Messages</Link>
                                     <Link to="/doctor/profile" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Practice Info</Link>
                                 </>
                             )
@@ -57,7 +63,7 @@ export default function Navbar() {
                             </>
                         ) : (
                             <div className="flex items-center gap-4 pl-4 border-l border-gray-100">
-                                <Link to={user?.role === 'doctor' ? '/doctor/profile' : '/patient/profile'} className="flex items-center gap-3 group">
+                                <Link to={user?.role === 'admin' ? '/admin/verifications' : user?.role === 'doctor' ? '/doctor/profile' : '/patient/profile'} className="flex items-center gap-3 group">
                                     <div className="text-right hidden lg:block">
                                         <p className="text-xs font-bold text-gray-900 group-hover:text-primary-600 transition-colors uppercase tracking-tight">{user?.name}</p>
                                         <p className="text-[10px] text-gray-500 font-medium capitalize">{user?.role}</p>
@@ -89,7 +95,12 @@ export default function Navbar() {
                 <div className="md:hidden bg-white border-t border-gray-100 shadow-xl py-4 px-4 space-y-1">
                     {isAuthenticated ? (
                         <>
-                            <Link to={user?.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-primary-50 rounded-lg transition tracking-tight">Dashboard</Link>
+                            <Link to={user?.role === 'admin' ? '/admin/verifications' : user?.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-primary-50 rounded-lg transition tracking-tight">
+                                {user?.role === 'admin' ? 'Doctor Approvals' : 'Dashboard'}
+                            </Link>
+                            {user?.role !== 'admin' && (
+                                <Link to={user?.role === 'doctor' ? '/doctor/messages' : '/patient/messages'} onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-primary-50 rounded-lg transition tracking-tight">Messages</Link>
+                            )}
                             <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-2">
                                 <LogOut className="w-4 h-4" /> Logout
                             </button>

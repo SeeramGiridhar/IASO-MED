@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Users, FileText, Star, TrendingUp, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, Users, FileText, Star, TrendingUp, ChevronRight, Loader2, AlertCircle, MessageSquare, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -42,6 +42,10 @@ export default function DoctorDashboard() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [verificationStatus, setVerificationStatus] = useState<{ isVerified: boolean; reviewStatus: string | null }>({
+        isVerified: true,
+        reviewStatus: null,
+    });
 
     const fetchDoctorData = useCallback(async () => {
         if (!user) return;
@@ -99,14 +103,19 @@ export default function DoctorDashboard() {
 
             if (countErr) throw countErr;
 
-            // Get doctor profile info for actual rating
+            // Get doctor profile info for actual rating & verification status
             const { data: docRecord, error: docErr } = await supabase
                 .from('doctors')
-                .select('rating')
+                .select('rating, is_verified, review_status')
                 .eq('id', user.id)
                 .maybeSingle();
 
             if (docErr) throw docErr;
+
+            setVerificationStatus({
+                isVerified: Boolean(docRecord?.is_verified),
+                reviewStatus: docRecord?.review_status || 'pending',
+            });
 
             const doctorRating = docRecord?.rating != null && Number(docRecord.rating) > 0 
                 ? Number(docRecord.rating).toFixed(1) 
@@ -194,6 +203,30 @@ export default function DoctorDashboard() {
                 </Link>
             </div>
 
+            {!verificationStatus.isVerified && (
+                <div className="mb-8 p-5 bg-amber-50 border border-amber-200 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                            <p className="font-bold text-amber-900 text-sm">
+                                {verificationStatus.reviewStatus === 'rejected'
+                                    ? 'Verification Declined — Action Required'
+                                    : 'Account Pending Admin Verification'}
+                            </p>
+                            <p className="text-xs text-amber-800 mt-0.5">
+                                Upload your medical license certificate in your profile so patients can find and book consultations with you.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/doctor/profile"
+                        className="self-start sm:self-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-colors shrink-0"
+                    >
+                        Verify Credentials
+                    </Link>
+                </div>
+            )}
+
             {error && (
                 <div className="mb-8 p-5 bg-red-50 border border-red-100 rounded-3xl flex items-center gap-4 text-red-600">
                     <AlertCircle className="w-6 h-6 shrink-0" />
@@ -250,12 +283,23 @@ export default function DoctorDashboard() {
                                         <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors truncate">{appt.patient?.full_name || 'Patient'}</h3>
                                         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Reason: {appt.reason || 'General Consultation'}</p>
                                     </div>
-                                    <Link
-                                        to={`/patient/reports`}
-                                        className="px-6 py-2.5 rounded-xl bg-primary-50 text-primary-600 text-xs font-bold uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all shadow-sm"
-                                    >
-                                        Review
-                                    </Link>
+                                    <div className="flex items-center gap-2">
+                                        {appt.patient?.id && (
+                                            <Link
+                                                to={`/doctor/messages/${appt.patient.id}`}
+                                                className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200 transition-all inline-flex items-center gap-1.5"
+                                            >
+                                                <MessageSquare className="w-3.5 h-3.5" />
+                                                Message
+                                            </Link>
+                                        )}
+                                        <Link
+                                            to="/doctor/reports"
+                                            className="px-6 py-2.5 rounded-xl bg-primary-50 text-primary-600 text-xs font-bold uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all shadow-sm"
+                                        >
+                                            Review
+                                        </Link>
+                                    </div>
                                 </div>
                             ))
                         )}

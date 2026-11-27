@@ -23,6 +23,8 @@ const DoctorDashboard = lazy(() => import('./pages/doctor/DoctorDashboard'));
 const DoctorReportsReview = lazy(() => import('./pages/doctor/PatientReportsReview'));
 const DoctorSchedule = lazy(() => import('./pages/doctor/DoctorSchedule'));
 const DoctorProfile = lazy(() => import('./pages/doctor/DoctorProfile'));
+const DoctorVerifications = lazy(() => import('./pages/admin/DoctorVerifications'));
+const MessagesPage = lazy(() => import('./pages/shared/MessagesPage'));
 
 function PageFallback() {
   return (
@@ -85,6 +87,16 @@ function App() {
                   <PatientProfile />
                 </ProtectedRoute>
               } />
+              <Route path="/patient/messages" element={
+                <ProtectedRoute allowedRole="patient">
+                  <MessagesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/patient/messages/:partnerId" element={
+                <ProtectedRoute allowedRole="patient">
+                  <MessagesPage />
+                </ProtectedRoute>
+              } />
 
               {/* Doctor Routes - Protected */}
               <Route path="/doctor/dashboard" element={
@@ -105,6 +117,23 @@ function App() {
               <Route path="/doctor/profile" element={
                 <ProtectedRoute allowedRole="doctor">
                   <DoctorProfile />
+                </ProtectedRoute>
+              } />
+              <Route path="/doctor/messages" element={
+                <ProtectedRoute allowedRole="doctor">
+                  <MessagesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/doctor/messages/:partnerId" element={
+                <ProtectedRoute allowedRole="doctor">
+                  <MessagesPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Admin Routes - Protected */}
+              <Route path="/admin/verifications" element={
+                <ProtectedRoute allowedRole="admin">
+                  <DoctorVerifications />
                 </ProtectedRoute>
               } />
             </Route>

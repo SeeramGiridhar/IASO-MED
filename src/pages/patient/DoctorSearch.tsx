@@ -49,7 +49,8 @@ export default function DoctorSearch() {
                         avatar_url,
                         email
                     )
-                `);
+                `)
+                .eq('is_verified', true);
 
             if (fetchError) throw fetchError;
 

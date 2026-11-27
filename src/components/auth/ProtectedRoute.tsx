@@ -1,9 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getHomeRouteForRole } from '../../lib/utils';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    allowedRole?: 'patient' | 'doctor';
+    allowedRole?: 'patient' | 'doctor' | 'admin';
 }
 
 export default function ProtectedRoute({ children, allowedRole }: ProtectedRouteProps) {
@@ -23,7 +24,7 @@ export default function ProtectedRoute({ children, allowedRole }: ProtectedRoute
     }
 
     if (allowedRole && user?.role !== allowedRole) {
-        return <Navigate to={user?.role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} replace />;
+        return <Navigate to={getHomeRouteForRole(user?.role)} replace />;
     }
 
     return <>{children}</>;
