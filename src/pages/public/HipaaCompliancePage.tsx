@@ -110,7 +110,7 @@ export default function HipaaCompliancePage() {
                             </p>
                             <div className="mt-4">
                                 <a
-                                    href="mailto:giridharpandu22@gmail.com?subject=HIPAA%20BAA%20Request"
+                                    href="mailto:compliance@iasomed.com?subject=HIPAA%20BAA%20Request"
                                     className="inline-flex items-center text-sm font-semibold text-primary-400 hover:text-primary-300 underline"
                                 >
                                     Request BAA Information &rarr;

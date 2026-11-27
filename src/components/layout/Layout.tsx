@@ -32,7 +32,7 @@ export default function Layout() {
                     <ChatBot />
                 </Suspense>
             ) : (
-                <div className="fixed bottom-6 right-6 z-50">
+                <div className="fixed bottom-6 right-6 z-40">
                     <button
                         onClick={() => {
                             setIsChatLoaded(true);
@@ -40,7 +40,7 @@ export default function Layout() {
                                 window.dispatchEvent(new CustomEvent('open-iaso-chat'));
                             }, 50);
                         }}
-                        className="w-14 h-14 bg-gradient-to-tr from-primary-600 to-primary-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 transition-all border-2 border-white/20 hover:scale-105 cursor-pointer"
+                        className="w-14 h-14 bg-gradient-to-tr from-primary-600 to-primary-500 rounded-full flex items-center justify-center text-white shadow-2xl shadow-primary-900/40 ring-4 ring-white/80 hover:shadow-primary-500/50 transition-all hover:scale-105 cursor-pointer"
                         aria-label="Open Health Assistant"
                         title="Chat with IASO AI"
                     >

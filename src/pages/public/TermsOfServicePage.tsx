@@ -92,8 +92,8 @@ export default function TermsOfServicePage() {
                         <h3 className="font-bold text-gray-900 mb-2">Inquiries & Contact</h3>
                         <p className="text-gray-600 text-sm">
                             If you have questions regarding these Terms of Service, contact our legal team at{' '}
-                            <a href="mailto:giridharpandu22@gmail.com" className="text-primary-600 hover:underline">
-                                giridharpandu22@gmail.com
+                            <a href="mailto:legal@iasomed.com" className="text-primary-600 hover:underline">
+                                legal@iasomed.com
                             </a>.
                         </p>
                     </section>

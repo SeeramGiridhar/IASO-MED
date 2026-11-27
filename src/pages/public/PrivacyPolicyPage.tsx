@@ -100,7 +100,7 @@ export default function PrivacyPolicyPage() {
                         <ul className="list-disc pl-5 space-y-2 text-gray-600 mt-2">
                             <li>Delete individual medical reports, which permanently purges the file from cloud storage.</li>
                             <li>Revoke doctor access to shared reports immediately.</li>
-                            <li>Request full account and data deletion by contacting our privacy compliance desk at <a href="mailto:giridharpandu22@gmail.com" className="text-primary-600 underline">giridharpandu22@gmail.com</a>.</li>
+                            <li>Request full account and data deletion by contacting our privacy compliance desk at <a href="mailto:privacy@iasomed.com" className="text-primary-600 underline">privacy@iasomed.com</a>.</li>
                         </ul>
                     </section>
 
@@ -110,8 +110,8 @@ export default function PrivacyPolicyPage() {
                         <p className="text-gray-600 text-sm">
                             IASO Med Healthcare Technologies<br />
                             Hyderabad, Telangana, India<br />
-                            Email: <a href="mailto:giridharpandu22@gmail.com" className="text-primary-600 hover:underline">giridharpandu22@gmail.com</a><br />
-                            Phone: +91 75694 50282
+                            Email: <a href="mailto:privacy@iasomed.com" className="text-primary-600 hover:underline">privacy@iasomed.com</a><br />
+                            Support: Mon – Fri, 9:00 AM – 6:00 PM IST
                         </p>
                     </section>
                 </div>

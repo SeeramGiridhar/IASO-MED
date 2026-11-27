@@ -184,25 +184,22 @@ export default function HelpCenterPage() {
 
                         <div className="grid sm:grid-cols-2 gap-4">
                             <a
-                                href="mailto:giridharpandu22@gmail.com"
+                                href="mailto:support@iasomed.com"
                                 className="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/15 rounded-2xl border border-white/10 transition-colors"
                             >
                                 <Mail className="w-5 h-5 text-primary-400 shrink-0" />
                                 <div>
                                     <p className="text-xs text-gray-400">Email Support</p>
-                                    <p className="text-sm font-semibold text-white">giridharpandu22@gmail.com</p>
+                                    <p className="text-sm font-semibold text-white">support@iasomed.com</p>
                                 </div>
                             </a>
-                            <a
-                                href="tel:+917569450282"
-                                className="flex items-center gap-3 p-4 bg-white/10 hover:bg-white/15 rounded-2xl border border-white/10 transition-colors"
-                            >
+                            <div className="flex items-center gap-3 p-4 bg-white/10 rounded-2xl border border-white/10">
                                 <Phone className="w-5 h-5 text-primary-400 shrink-0" />
                                 <div>
-                                    <p className="text-xs text-gray-400">Call / WhatsApp</p>
-                                    <p className="text-sm font-semibold text-white">+91 75694 50282</p>
+                                    <p className="text-xs text-gray-400">Support Hours</p>
+                                    <p className="text-sm font-semibold text-white">Mon – Fri, 9:00 AM – 6:00 PM IST</p>
                                 </div>
-                            </a>
+                            </div>
                         </div>
                     </div>
                 </div>

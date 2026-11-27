@@ -189,7 +189,7 @@ export default function PricingPage() {
                     <div className="text-center mt-12">
                         <p className="text-sm text-gray-500">
                             Have specific clinical or enterprise needs?{' '}
-                            <a href="mailto:giridharpandu22@gmail.com" className="text-primary-600 font-semibold hover:underline">
+                            <a href="mailto:support@iasomed.com" className="text-primary-600 font-semibold hover:underline">
                                 Contact our team
                             </a>
                         </p>
