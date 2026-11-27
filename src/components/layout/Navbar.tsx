@@ -27,7 +27,7 @@ export default function Navbar() {
                             <>
                                 <a href="/#features" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Features</a>
                                 <a href="/#how-it-works" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">How It Works</a>
-                                <Link to="/pricing" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Pricing</Link>
+                                <a href="/#for-doctors" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">For Doctors</a>
                                 <Link to="/help" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Help</Link>
                             </>
                         ) : (
@@ -98,7 +98,7 @@ export default function Navbar() {
                         <>
                             <a href="/#features" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">Features</a>
                             <a href="/#how-it-works" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">How It Works</a>
-                            <Link to="/pricing" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">Pricing</Link>
+                            <a href="/#for-doctors" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">For Doctors</a>
                             <Link to="/help" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">Help Center</Link>
                             <div className="pt-2 border-t border-gray-100 space-y-2">
                                 <Link to="/login" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-semibold text-center text-gray-700 bg-gray-50 rounded-xl">Sign In</Link>

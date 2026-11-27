@@ -8,7 +8,6 @@ import Layout from './components/layout/Layout';
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
-const PricingPage = lazy(() => import('./pages/public/PricingPage'));
 const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/public/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('./pages/public/TermsOfServicePage'));
@@ -45,7 +44,6 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/pricing" element={<PricingPage />} />
               <Route path="/help" element={<HelpCenterPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
