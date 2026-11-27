@@ -21,14 +21,28 @@ export default function Footer() {
                             AI-powered medical report analysis and healthcare management platform. Understand your health better.
                         </p>
                         <div className="flex items-center gap-3">
-                            <a href="#" className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-primary-600 flex items-center justify-center transition-colors">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557a9.83 9.83 0 01-2.828.775 4.932 4.932 0 002.165-2.724 9.864 9.864 0 01-3.127 1.195 4.916 4.916 0 00-8.384 4.482A13.944 13.944 0 011.671 3.149a4.916 4.916 0 001.523 6.574 4.897 4.897 0 01-2.229-.616v.062a4.916 4.916 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.937 4.937 0 004.604 3.417 9.868 9.868 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.054 0 13.999-7.496 13.999-13.986 0-.209 0-.42-.015-.63a9.936 9.936 0 002.46-2.548l-.047-.02z" /></svg>
+                            <a
+                                href="https://github.com/SeeramGiridhar/IASO-MED"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-primary-600 flex items-center justify-center transition-colors text-gray-300 hover:text-white"
+                                title="GitHub Repository"
+                            >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" /></svg>
                             </a>
-                            <a href="#" className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-primary-600 flex items-center justify-center transition-colors">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.685c.223-.198-.054-.308-.346-.11l-6.4 4.02-2.76-.918c-.6-.187-.612-.6.125-.89l10.782-4.156c.5-.18.943.12.78.89z" /></svg>
+                            <a
+                                href="mailto:giridharpandu22@gmail.com"
+                                className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-primary-600 flex items-center justify-center transition-colors text-gray-300 hover:text-white"
+                                title="Contact Support via Email"
+                            >
+                                <Mail className="w-4 h-4" />
                             </a>
-                            <a href="#" className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-primary-600 flex items-center justify-center transition-colors">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
+                            <a
+                                href="tel:+917569450282"
+                                className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-primary-600 flex items-center justify-center transition-colors text-gray-300 hover:text-white"
+                                title="Direct Phone Support"
+                            >
+                                <Phone className="w-4 h-4" />
                             </a>
                         </div>
                     </div>
@@ -37,9 +51,9 @@ export default function Footer() {
                     <div>
                         <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Platform</h4>
                         <ul className="space-y-3">
-                            <li><a href="#features" className="text-sm hover:text-primary-400 transition-colors">Features</a></li>
-                            <li><a href="#how-it-works" className="text-sm hover:text-primary-400 transition-colors">How It Works</a></li>
-                            <li><a href="#" className="text-sm hover:text-primary-400 transition-colors">Pricing</a></li>
+                            <li><a href="/#features" className="text-sm hover:text-primary-400 transition-colors">Features</a></li>
+                            <li><a href="/#how-it-works" className="text-sm hover:text-primary-400 transition-colors">How It Works</a></li>
+                            <li><Link to="/pricing" className="text-sm hover:text-primary-400 transition-colors">Pricing</Link></li>
                             <li><Link to="/register" className="text-sm hover:text-primary-400 transition-colors">Sign Up</Link></li>
                         </ul>
                     </div>
@@ -48,10 +62,10 @@ export default function Footer() {
                     <div>
                         <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Resources</h4>
                         <ul className="space-y-3">
-                            <li><a href="#" className="text-sm hover:text-primary-400 transition-colors">Help Center</a></li>
-                            <li><a href="#" className="text-sm hover:text-primary-400 transition-colors">Privacy Policy</a></li>
-                            <li><a href="#" className="text-sm hover:text-primary-400 transition-colors">Terms of Service</a></li>
-                            <li><a href="#" className="text-sm hover:text-primary-400 transition-colors">HIPAA Compliance</a></li>
+                            <li><Link to="/help" className="text-sm hover:text-primary-400 transition-colors">Help Center</Link></li>
+                            <li><Link to="/privacy" className="text-sm hover:text-primary-400 transition-colors">Privacy Policy</Link></li>
+                            <li><Link to="/terms" className="text-sm hover:text-primary-400 transition-colors">Terms of Service</Link></li>
+                            <li><Link to="/hipaa" className="text-sm hover:text-primary-400 transition-colors">HIPAA Compliance</Link></li>
                         </ul>
                     </div>
 

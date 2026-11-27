@@ -28,3 +28,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+.vercel
+.env*
+sample_blood_report.png
+

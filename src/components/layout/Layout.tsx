@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -8,6 +8,11 @@ const ChatBot = lazy(() => import('../chat/ChatBot'));
 
 export default function Layout() {
     const [isChatLoaded, setIsChatLoaded] = useState(false);
+    const location = useLocation();
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [location.pathname]);
 
     useEffect(() => {
         const handleOpenChat = () => setIsChatLoaded(true);

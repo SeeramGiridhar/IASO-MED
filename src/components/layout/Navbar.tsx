@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Menu, X, Heart, LogOut, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar() {
     const { user, isAuthenticated, logout } = useAuth();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const location = useLocation();
-    const isLanding = location.pathname === '/';
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200/60">
@@ -25,13 +23,14 @@ export default function Navbar() {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-1">
-                        {isLanding && !isAuthenticated ? (
+                        {!isAuthenticated ? (
                             <>
-                                <a href="#features" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Features</a>
-                                <a href="#how-it-works" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">How It Works</a>
-                                <a href="#for-doctors" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">For Doctors</a>
+                                <a href="/#features" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Features</a>
+                                <a href="/#how-it-works" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">How It Works</a>
+                                <Link to="/pricing" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Pricing</Link>
+                                <Link to="/help" className="px-3.5 py-2 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Help</Link>
                             </>
-                        ) : isAuthenticated ? (
+                        ) : (
                             user?.role === 'patient' ? (
                                 <>
                                     <Link to="/patient/dashboard" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Dashboard</Link>
@@ -46,7 +45,7 @@ export default function Navbar() {
                                     <Link to="/doctor/profile" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-all">Practice Info</Link>
                                 </>
                             )
-                        ) : null}
+                        )}
                     </nav>
 
                     {/* CTA Buttons / User Menu */}
@@ -85,7 +84,7 @@ export default function Navbar() {
                 </div>
             </div>
 
-            {/* Mobile Menu */}
+                    {/* Mobile Menu */}
             {mobileOpen && (
                 <div className="md:hidden bg-white border-t border-gray-100 shadow-xl py-4 px-4 space-y-1">
                     {isAuthenticated ? (
@@ -97,8 +96,14 @@ export default function Navbar() {
                         </>
                     ) : (
                         <>
-                            <Link to="/login" onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">Sign In</Link>
-                            <Link to="/register" onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-sm font-semibold text-white bg-primary-600 rounded-xl">Get Started</Link>
+                            <a href="/#features" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">Features</a>
+                            <a href="/#how-it-works" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">How It Works</a>
+                            <Link to="/pricing" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">Pricing</Link>
+                            <Link to="/help" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg transition">Help Center</Link>
+                            <div className="pt-2 border-t border-gray-100 space-y-2">
+                                <Link to="/login" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-semibold text-center text-gray-700 bg-gray-50 rounded-xl">Sign In</Link>
+                                <Link to="/register" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-semibold text-center text-white bg-primary-600 rounded-xl">Get Started</Link>
+                            </div>
                         </>
                     )}
                 </div>
