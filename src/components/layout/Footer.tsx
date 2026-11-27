@@ -3,7 +3,7 @@ import { Heart, Mail, MapPin, Clock, HelpCircle } from 'lucide-react';
 
 export default function Footer() {
     return (
-        <footer className="bg-gray-900 text-gray-300 pb-24 sm:pb-0">
+        <footer className="bg-gray-900 text-gray-300 pb-24 sm:pb-20">
             {/* Main footer */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -55,7 +55,7 @@ export default function Footer() {
 
                     {/* Quick Links */}
                     <div>
-                        <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Platform</h4>
+                        <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Platform</h3>
                         <ul className="space-y-3">
                             <li><a href="/#features" className="text-sm hover:text-primary-400 transition-colors">Features</a></li>
                             <li><a href="/#how-it-works" className="text-sm hover:text-primary-400 transition-colors">How It Works</a></li>
@@ -66,7 +66,7 @@ export default function Footer() {
 
                     {/* Resources */}
                     <div>
-                        <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Resources</h4>
+                        <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Resources</h3>
                         <ul className="space-y-3">
                             <li><Link to="/help" className="text-sm hover:text-primary-400 transition-colors">Help Center</Link></li>
                             <li><Link to="/privacy" className="text-sm hover:text-primary-400 transition-colors">Privacy Policy</Link></li>
@@ -77,7 +77,7 @@ export default function Footer() {
 
                     {/* Contact */}
                     <div>
-                        <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Contact &amp; Support</h4>
+                        <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Contact &amp; Support</h3>
                         <ul className="space-y-3">
                             <li className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4 text-primary-400" /> support@iasomed.com</li>
                             <li className="flex items-center gap-2 text-sm"><Clock className="w-4 h-4 text-primary-400" /> Mon – Fri, 9:00 AM – 6:00 PM IST</li>
@@ -90,8 +90,8 @@ export default function Footer() {
             {/* Bottom bar */}
             <div className="border-t border-gray-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <p className="text-xs text-gray-500">&copy; {new Date().getFullYear()} IASO Med. All rights reserved.</p>
-                    <p className="text-xs text-gray-500">HIPAA-Ready Architecture &bull; 256-bit AES Encryption &bull; Role-Based Access Control</p>
+                    <p className="text-xs text-gray-300">&copy; {new Date().getFullYear()} IASO Med. All rights reserved.</p>
+                    <p className="text-xs text-gray-300">HIPAA-Ready Architecture &bull; 256-bit AES Encryption &bull; Role-Based Access Control</p>
                 </div>
             </div>
         </footer>

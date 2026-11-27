@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Share2, Calendar, Brain, CheckCircle2, AlertTriangle, Printer, Loader2, FileText, Info, Paperclip, Clock } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Calendar, Brain, CheckCircle2, AlertTriangle, Printer, Loader2, FileText, Info, Paperclip, Clock, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface MarkerItem {
@@ -41,6 +41,8 @@ export default function ReportAnalysis() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [downloading, setDownloading] = useState(false);
+    const [retrying, setRetrying] = useState(false);
+    const [retryError, setRetryError] = useState<string | null>(null);
 
     const fetchReport = useCallback(async () => {
         if (!reportId) return;
@@ -85,24 +87,111 @@ export default function ReportAnalysis() {
 
     // Authorized download using short-lived signed URLs for private storage bucket
     const handleDownload = async (targetPath?: string) => {
-        const filePath = targetPath || report?.file_url;
-        if (!filePath) return;
+        const filePath = targetPath || report?.file_url || report?.file_urls?.[0];
+        if (!filePath) {
+            alert('No downloadable file is attached to this report.');
+            return;
+        }
 
         setDownloading(true);
         try {
-            const { data, error: signError } = await supabase.storage
-                .from('medical-reports')
-                .createSignedUrl(filePath, 120, { download: true });
+            let downloadUrl = filePath;
+            if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
+                const { data, error: signError } = await supabase.storage
+                    .from('medical-reports')
+                    .createSignedUrl(filePath, 120, { download: true });
 
-            if (signError) throw signError;
-            if (data?.signedUrl) {
-                window.open(data.signedUrl, '_blank');
+                if (signError) throw signError;
+                if (!data?.signedUrl) throw new Error('Signed URL was empty.');
+                downloadUrl = data.signedUrl;
             }
+
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.download = report?.title ? `${report.title.replace(/[^a-z0-9_-]/gi, '_')}` : 'medical-report';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } catch (err) {
             console.error('Download error:', err);
             alert('Failed to generate secure download link. Please check your permissions.');
         } finally {
             setDownloading(false);
+        }
+    };
+
+    const handleRetryAnalysis = async () => {
+        if (!report) return;
+        const filePath = report.file_url || report.file_urls?.[0];
+        if (!filePath) {
+            setRetryError('No attached document found to analyze.');
+            return;
+        }
+
+        setRetrying(true);
+        setRetryError(null);
+        try {
+            let fileUrl = filePath;
+            if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
+                const { data, error: signError } = await supabase.storage
+                    .from('medical-reports')
+                    .createSignedUrl(filePath, 120);
+                if (signError || !data?.signedUrl) throw signError || new Error('Could not access file.');
+                fileUrl = data.signedUrl;
+            }
+
+            const fileRes = await fetch(fileUrl);
+            if (!fileRes.ok) throw new Error('Failed to fetch stored report file.');
+            const blob = await fileRes.blob();
+            const base64Data = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const result = reader.result as string;
+                    resolve(result.split(',')[1] || '');
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+
+            const aiRes = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    base64Data,
+                    mimeType: blob.type || 'image/jpeg',
+                }),
+            });
+
+            if (!aiRes.ok) {
+                const errPayload = await aiRes.json().catch(() => ({}));
+                throw new Error(errPayload.error || 'AI analysis service returned an error.');
+            }
+
+            const parsed: AIAnalysisPayload = await aiRes.json();
+            const nextStatus = parsed.severity || 'normal';
+
+            await supabase
+                .from('reports')
+                .update({
+                    ai_summary: parsed.summary || null,
+                    ai_analysis: parsed,
+                    status: nextStatus,
+                })
+                .eq('id', report.id);
+
+            setReport({
+                ...report,
+                ai_summary: parsed.summary,
+                ai_analysis: parsed,
+                status: nextStatus,
+            });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Retry failed. Please try again later.';
+            setRetryError(msg);
+        } finally {
+            setRetrying(false);
         }
     };
 
@@ -313,8 +402,21 @@ export default function ReportAnalysis() {
                                         </p>
                                     </div>
                                     <p className="text-primary-100 text-sm leading-relaxed opacity-90">
-                                        Our AI is processing the uploaded document to extract biomarkers and clinical findings. Please refresh in a moment.
+                                        Our AI is processing the uploaded document to extract biomarkers and clinical findings. If this has been pending for more than a minute, you can retry analysis below.
                                     </p>
+                                    {retryError && (
+                                        <p className="text-xs font-medium text-amber-200 bg-red-900/30 border border-red-400/30 rounded-xl px-3 py-2">
+                                            {retryError}
+                                        </p>
+                                    )}
+                                    <button
+                                        onClick={handleRetryAnalysis}
+                                        disabled={retrying}
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl text-white text-sm font-bold transition-all border border-white/25 disabled:opacity-50"
+                                    >
+                                        <RefreshCw className={`w-4 h-4 ${retrying ? 'animate-spin' : ''}`} />
+                                        {retrying ? 'Retrying Analysis...' : 'Retry AI Analysis'}
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="space-y-4">

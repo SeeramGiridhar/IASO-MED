@@ -15,7 +15,7 @@ interface PatientData {
 }
 
 export default function PatientProfile() {
-    const { user, logout } = useAuth();
+    const { user, logout, isLoading: authLoading } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     const [profile, setProfile] = useState<PatientData>({
@@ -30,20 +30,25 @@ export default function PatientProfile() {
     });
 
     const fetchPatientData = useCallback(async () => {
-        if (!user) return;
+        if (authLoading) return;
+        if (!user) {
+            setIsLoading(false);
+            return;
+        }
         setIsLoading(true);
         try {
-            const { data: patientRecord } = await supabase
-                .from('patients')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            const { data: profileRecord } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
+            const [{ data: patientRecord }, { data: profileRecord }] = await Promise.all([
+                supabase
+                    .from('patients')
+                    .select('*')
+                    .eq('id', user.id)
+                    .maybeSingle(),
+                supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .maybeSingle(),
+            ]);
 
             setProfile({
                 name: profileRecord?.full_name || user.name || 'Patient',
@@ -60,7 +65,7 @@ export default function PatientProfile() {
         } finally {
             setIsLoading(false);
         }
-    }, [user]);
+    }, [user, authLoading]);
 
     useEffect(() => {
         fetchPatientData();

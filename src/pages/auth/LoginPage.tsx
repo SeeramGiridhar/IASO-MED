@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Heart, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const [userType, setUserType] = useState<'patient' | 'doctor'>('patient');
+    const [searchParams] = useSearchParams();
+    const initialRole = searchParams.get('role') === 'doctor' ? 'doctor' : 'patient';
+    const [userType, setUserType] = useState<'patient' | 'doctor'>(initialRole);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +47,11 @@ export default function LoginPage() {
 
             if (role === 'admin') {
                 navigate('/admin/verifications');
+            } else if (role && role !== userType) {
+                await supabase.auth.signOut();
+                const actualLabel = role === 'doctor' ? 'Doctor' : 'Patient';
+                setError(`This account is registered as a ${actualLabel}. Please switch to the ${actualLabel} tab to sign in.`);
+                return;
             } else {
                 navigate(role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard');
             }

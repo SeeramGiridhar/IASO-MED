@@ -70,7 +70,7 @@ export default function TermsOfServicePage() {
                             3. Nature of Artificial Intelligence Outputs
                         </h2>
                         <p>
-                            While our extraction algorithms utilize advanced foundation models (Google Gemini 3.5), optical character recognition (OCR)
+                            While our extraction algorithms utilize advanced Google Gemini multimodal foundation models, optical character recognition (OCR)
                             and generative AI are subject to physical document legibility, printing artifacts, and model hallucinations. You agree that
                             IASO Med does not warrant 100% numerical perfection of automated extractions and that all critical health decisions must
                             be confirmed with a certified human physician.
