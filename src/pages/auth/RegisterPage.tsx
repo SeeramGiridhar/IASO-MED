@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Heart, Stethoscope, AlertCircle, Eye, EyeOff, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function RegisterPage() {
-    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const roleParam = searchParams.get('role');
     const initialRole = roleParam === 'doctor' || roleParam === 'patient' ? roleParam : null;
@@ -13,6 +12,7 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -81,16 +81,13 @@ export default function RegisterPage() {
                 password: formData.password,
                 options: {
                     data: metadata,
-                    emailRedirectTo: `${window.location.origin}/login`
+                    emailRedirectTo: `${window.location.origin}/verify-email`
                 }
             });
 
             if (signUpError) throw signUpError;
 
-            // In a real app, we'd wait for email confirmation or create profiles entry
-            // But our SQL trigger handles profile creation.
-            alert('Registration successful! Please check your email or sign in.');
-            navigate('/login');
+            setRegisteredEmail(formData.email);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'An error occurred during registration';
             setError(message || 'An error occurred during registration');
@@ -100,6 +97,31 @@ export default function RegisterPage() {
     };
 
     const totalSteps = 3;
+
+    if (registeredEmail) {
+        return (
+            <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4">
+                <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-gray-200/60 border border-gray-100 p-8 sm:p-10 text-center space-y-6">
+                    <div className="w-16 h-16 bg-primary-50 border border-primary-100 rounded-2xl flex items-center justify-center mx-auto text-primary-600">
+                        <Mail className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Check Your Email</h1>
+                        <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+                            We sent a verification link to <strong>{registeredEmail}</strong>. Click the confirmation link in your Gmail to verify your email address.
+                        </p>
+                    </div>
+                    <Link
+                        to="/login"
+                        className="w-full py-3.5 px-6 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl transition-all inline-flex items-center justify-center gap-2"
+                    >
+                        Go to Sign In
+                        <ArrowRight className="w-4 h-4" />
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     if (!userType) {
         return (

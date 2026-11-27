@@ -1,14 +1,24 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useState, useEffect, useRef } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { initialEmailVerification } from '../../lib/supabase';
 
 const ChatBot = lazy(() => import('../chat/ChatBot'));
 
 export default function Layout() {
     const [isChatLoaded, setIsChatLoaded] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const handledVerificationRedirect = useRef(false);
+
+    useEffect(() => {
+        if (!handledVerificationRedirect.current && initialEmailVerification && location.pathname !== '/verify-email') {
+            handledVerificationRedirect.current = true;
+            navigate('/verify-email', { replace: true });
+        }
+    }, [location.pathname, navigate]);
 
     useEffect(() => {
         if (location.hash) {
